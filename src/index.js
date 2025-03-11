@@ -6,12 +6,14 @@ import rutasUsuario from './routes/usuario.route.js';
 
 const app = express();
 /* middlewares */
+app.disable('x-powered-by')
 app.use(express.json());
+app.use(express.urlencoded({extended:true}));
 app.use(morgan('dev'));
 
 /* rutas */
-app.use(rutasPersona);
-app.use(rutasUsuario);
+app.use('/people', rutasPersona);
+app.use('/api/v1/users', rutasUsuario);
 
 /* servidor corriendo */
 app.listen(PORT, () => {

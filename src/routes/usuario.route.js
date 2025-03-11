@@ -1,21 +1,14 @@
 import { Router } from 'express';
-import {getData, getDataById, postData, putDataById, deleteDataById} from '../controllers/usuario.controller.js'
+import { usuarioController } from '../controllers/usuario.controller.js';
+import { verificarToken } from '../middlewares/jwt.middleware.js';
 
  
 export const rutas = Router();
 
-rutas.get('/usuarios', getData)
+rutas.post('/login', usuarioController.inicioSesion)
 
-rutas.get('/usuarios/:id', getDataById)
+rutas.post('/register', usuarioController.registroUsuario)
 
-rutas.post('/usuarios', postData)
-
-rutas.patch('/usuarios/:id', putDataById)
-
-rutas.delete('/usuarios/:id', deleteDataById)
-
-rutas.use('/',(req, res)=>{
-    res.json("Url no encontrado en usuario")
-})
+rutas.get("/profile", verificarToken, usuarioController.perfil)
 
 export default rutas;

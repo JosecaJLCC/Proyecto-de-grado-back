@@ -1,83 +1,79 @@
-import { pool } from "../database.js";
+import { usuarioModel } from "../models/usuario.model.js";
+import bcrypt from "bcryptjs";
+import jwt from 'jsonwebtoken';
+import { JWT_TOKEN } from "../config.js";
 
-export const getData = async(req, res)=>{
+const inicioSesion =  async(req, res)=>{
     try {
-        const resultado = await pool.query('select * from usuario');    
-        if(resultado[0]<=0){
-            return res.status(404).json(`No existen usuarios para mostrar`);
+        const {correo, clave} = req.body;
+        if(!correo || !clave){
+            return res.status(404).json({ok:false, msg:"Faltan datos por llenar en USUARIO"})
         }
-        res.json(resultado[0]);
+        /* Hallamos el correo del usuario para la auntenticacion */
+        const usuario = await usuarioModel.correoUsuario(correo);
+        
+        if(!usuario.length){
+            return res.status(404).json({ ok:false, msg:`No existe el correo` })
+        }
+        const isMatch = await bcrypt.compare(clave, usuario[0].clave)
+        
+        if(!isMatch){
+            return res.status(404).json({ ok:false, msg:`No existe el correo` })
+        }
+        const token = jwt.sign({
+            correo: correo
+        }, JWT_TOKEN, {expiresIn: '1h'})
+
+        /* const resultado = await usuarioModel.inicioSesion(correo, clave) */
+        res.json({ ok:true, token:token })
     } catch (error) {
-        console.log("Error en GET", error)
+        console.log(error)
+        res.status(500).json({ok:false, msg:"error server login"})
     }
 }
 
-export const getDataById =  async(req, res)=>{
+const registroUsuario = async(req, res)=>{
+    const { nombre_usuario, correo, clave, id_persona }= req.body;
     try {
-        const { id } = req.params;
-        const resultado = await pool.query(`select * from usuario where id_usuario=?`, [id])
-        if(resultado[0]<=0){
-            return res.status(404).json(`No existe el usuario con el id ${id}`)
-        }
-        res.json(resultado[0]) 
-    } catch (error) {
-        console.log("Error en GET id", error)
-    }
-}
-
-export const postData = async(req, res)=>{
-    try {
-        const {
-            nombre_usuario,
-            correo,
-            clave,
-            id_persona } = req.body;
-    
         if(!nombre_usuario || !correo || !clave || !id_persona){
             return res.status(400).json("datos incompletos para agregar")
         }
-        const resultado = await pool.query(`insert into usuario(nombre_usuario, correo, clave, fecha_creacion, id_persona) 
-            values (?, ?, ?, now(), ?);`, [nombre_usuario, correo, clave, id_persona])
-        res.status(201).json(resultado[0])
-    } catch (error) {
-        console.log("Error en POST", error)
-    }
-}
+        const usuario = await usuarioModel.correoUsuario(correo);
 
-export const putDataById = async(req, res)=>{
-    try {
-        const { id } = req.params;
-        const {
-            nombre_usuario,
-            correo,
-            clave,
-            id_persona } = req.body;
-    
-        let resultado = await pool.query(`update usuario 
-            set nombre_usuario=ifnull(?, nombre_usuario),
-            correo=ifnull(?, correo),
-            clave=ifnull(?, clave),
-            id_persona=ifnull(?, id_persona)
-            where id_usuario=?`, [nombre_usuario, correo, clave, id_persona, id])
-        if(resultado[0].affectedRows<=0){
-            return res.status(404).json(`No existe el usuario con el id ${id}`)
+        if(usuario.length){
+            return res.status(404).json({ ok:false, msg:`El correo ya existe` })
         }
-        res.json(resultado[0])
+
+        /* Para la encriptacion de contrasenias */
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(clave, salt)
+
+        /* Para la generacion de token de inicio de sesion */
+        const token = jwt.sign({
+            correo: correo
+        }, JWT_TOKEN, {expiresIn: '1h'})
+
+        const resultado =await usuarioModel.registrarUsuario({ nombre_usuario, correo, clave: hashedPassword, id_persona })
+        res.json({ ok:true, msg: resultado, token: token})
     } catch (error) {
-        console.log("Error en PATCH", error)
+        console.log(error)
+        res.status(500).json({ok:false, msg:"error server register"})
     }
 }
 
-export const deleteDataById = async(req, res)=>{
+const perfil = async(req, res) => {
     try {
-        const { id } = req.params;
-        let resultado = await pool.query(`delete from usuario where id_usuario=?;`, [id]);
-        if(resultado[0].affectedRows<=0){
-            return res.status(404).json(`No existe el usuario con el id ${id}`)
-        }
-        res.json(resultado[0])
+        const usuario = await usuarioModel.correoUsuario(req.correo);
+        
+        res.json({ok: true, msg: usuario })
     } catch (error) {
-        console.log("Error en DELETE", error)
+        console.log(error)
+        res.status(500).json({ok:false, msg:"error server register"})
     }
 }
 
+export const usuarioController={
+    inicioSesion,
+    registroUsuario, 
+    perfil
+}

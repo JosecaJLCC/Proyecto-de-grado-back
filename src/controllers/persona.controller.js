@@ -1,29 +1,53 @@
-import { pool } from "../database.js";
+import { personaModel } from "../models/persona.model.js";
 
-export const getData = async(req, res)=>{
+export const crearPersona = async(req, res)=>{
     try {
-        const resultado = await pool.query('select * from persona');    
-        if(resultado[0]<=0){
+        const {ci, extension, 
+            nombre, paterno, materno, 
+            nacionalidad, estado_civil, 
+            nro_telf, sexo, fecha_nacimiento}=req.body;
+        if(!ci || !extension ||
+            !nombre || !paterno || !materno || 
+            !nacionalidad || !estado_civil || 
+            !nro_telf || !sexo || !fecha_nacimiento){
+                return res.status(404).json({ok:false, message:'Faltan datos por llenar en PERSONA'})
+            }
+
+        const resultado = await personaModel.crearPersona({ci, extension, 
+                                                        nombre, paterno, materno, 
+                                                        nacionalidad, estado_civil, 
+                                                        nro_telf, sexo, fecha_nacimiento})
+        /* Si resultado.affectedRows es 1 se creo la persona, pero si sale 0 quiere decir que no hay personas registradas */
+        if(resultado.affectedRows<=0){
             return res.status(404).json(`No existen personas para mostrar`);
         }
-        res.json(resultado[0]);
+        res.status(201).json({ok:true, message:"Persona agregada"});
     } catch (error) {
         console.log("Error en GET", error)
     }
 }
 
-export const getDataById =  async(req, res)=>{
+
+export const verificarCI =  async(req, res)=>{
     try {
-        const { id } = req.params;
-        const resultado = await pool.query(`select * from persona where id_persona=?`, [id])
-        if(resultado[0]<=0){
-            return res.status(404).json(`No existe la persona con el id ${id}`)
+        const { ci, extension } = req.body;
+        const resultado = await personaModel.verificarCI(ci, extension);
+        console.log("controller", resultado.length)
+        if(resultado.length<=0){
+            return res.status(404).json(`No existe la persona con ci ${ci} ${extension}`)
         }
-        res.json(resultado[0]) 
+        res.status(200).json({ok:true, message:"Persona agregada"}) 
     } catch (error) {
         console.log("Error en GET id", error)
     }
 }
+
+export const personaController = {
+    crearPersona,
+    verificarCI
+}
+
+/* 
 
 export const postData = async(req, res)=>{
     try {
@@ -82,4 +106,4 @@ export const deleteDataById = async(req, res)=>{
     }
     res.json(resultado[0])
 }
-
+ */

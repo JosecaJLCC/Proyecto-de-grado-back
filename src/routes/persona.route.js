@@ -1,21 +1,23 @@
 import { Router } from 'express';
-import {getData, getDataById, postData, putDataById, deleteDataById} from '../controllers/persona.controller.js'
+import {crearPersona, verificarCI} from '../controllers/persona.controller.js'
 
  
 export const rutas = Router();
 
-rutas.get('/personas', getData)
+/* rutas.get('/personas', getData)
 
-rutas.get('/personas/:id', getDataById)
+rutas.get('/personas/:id', getDataById) */
 
-rutas.post('/personas', postData)
+rutas.post('/post', crearPersona)
 
-rutas.patch('/personas/:id', putDataById)
+rutas.post('/ci', verificarCI)
+
+/* rutas.patch('/personas/:id', putDataById)
 
 rutas.delete('/personas/:id', deleteDataById)
-
-rutas.use('/',(req, res, next)=>{
+ */
+/* rutas.use('/',(req, res, next)=>{
     next();
-})
+}) */
 
 export default rutas;
