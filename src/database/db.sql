@@ -1,6 +1,3 @@
-create database cs_copacabana;
-use cs_copacabana;
-
 create table if not exists persona(
 	id_persona int auto_increment not null,
     ci varchar(20) not null,
@@ -18,6 +15,7 @@ create table if not exists persona(
 
 create table if not exists personal(
 	id_personal int auto_increment not null,
+    perfil varchar(255),
     profesion varchar(50) not null,
     area_trabajo varchar(50) not null,
     fecha_ingreso date not null,
@@ -83,12 +81,3 @@ create table if not exists direccion(
     foreign key (id_persona) references persona(id_persona),
     foreign key(id_establecimiento) references establecimiento(id_establecimiento)
 );
-
-insert into persona(ci, extension, nombre, paterno, materno, sexo, fecha_nacimiento)  
-values ('12796720', 'LP', 'JOSE LUIS', 'CONDORI', 'CHAMBI', 'MASCULINO', '2000-03-12');
-
-insert into usuario(nombre_usuario, correo, clave, fecha_creacion, id_persona)
-values ('jlcondoric', 'informaticajlcc@gmail.com', '12345678', now() , 1);
-
-select * from usuario;
-delete from usuario where id_persona=1;

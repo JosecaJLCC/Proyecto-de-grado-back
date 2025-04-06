@@ -33,6 +33,10 @@ const verificarCI = async(ci, extension) =>{
     return resultado[0];
 }
 
+const actualizarPersona = async()=>{
+
+}
+
 export const personaModel = {
     crearPersona,
     verificarCI

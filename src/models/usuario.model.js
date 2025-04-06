@@ -1,20 +1,19 @@
 /* Se importa la configuracion de la conexion con la base de datos */
 import { pool } from '../database.js';
 /*  */
-const registrarUsuario = async({ nombre_usuario,correo,clave,id_persona }) =>{
+const registrarUsuario = async({ nombre_usuario,correo,clave,id_personal, id_rol }) =>{
     const query = {
-        text: `insert into usuario(nombre_usuario, correo, clave, fecha_creacion, id_persona) 
-            values (?, ?, ?, now(), ?);`,
-        values: [nombre_usuario, correo, clave, id_persona]
+        text: `insert into usuario(nombre_usuario, correo, clave, fecha_creacion, id_personal, id_rol) 
+                values (?, ?, ?, now(),?, ?);`,
+        values: [nombre_usuario, correo, clave, id_personal, id_rol]
     }
     const resultado = await pool.query(query.text, query.values);
-    console.log(resultado)
     return resultado[0];
 }
 
 const inicioSesion = async(correo, clave) => {
     const query = {
-        text: `select correo, clave from usuario where correo like ? and clave like ?;`,
+        text: `select correo, clave from usuario where correo = ? and clave = ?;`,
         values: [correo, clave]
     }
     const resultado = await pool.query(query.text, query.values);
@@ -23,7 +22,7 @@ const inicioSesion = async(correo, clave) => {
 
 const correoUsuario = async(correo) => {
     const query = {
-        text: `select * from usuario where correo like ?;`,
+        text: `select * from usuario where correo = ?;`,
         values: [correo]
     }
     const resultado = await pool.query(query.text, query.values);
