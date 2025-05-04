@@ -17,7 +17,7 @@ app.use(morgan('dev'));
 app.use(cors());
 
 /* rutas */
-app.use('/people', rutasPersona);
+app.use('/api/v1/people', rutasPersona);
 app.use('/api/v1/users', rutasUsuario);
 
 /* servidor corriendo */

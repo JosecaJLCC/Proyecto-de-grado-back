@@ -71,9 +71,25 @@ export const verificarCI =  async(req, res)=>{
     }
 }
 
+export const mostrarPersonas = async(req, res) =>{
+    try {
+        
+        const resultado = await personaModel.mostrarPersonas();
+        console.log("controller", resultado)
+        if(resultado.length<=0){
+            return res.status(404).json(`No existen registros`)
+        }
+        res.status(200).json({ok:true, resultado: resultado }) 
+    } catch (error) {
+        console.log("Error en GET id", error)
+    }
+}
+
+
 export const personaController = {
     crearPersona,
-    verificarCI
+    verificarCI,
+    mostrarPersonas
 }
 
 /* 

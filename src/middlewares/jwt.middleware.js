@@ -7,6 +7,7 @@ export const verificarToken = (req, res, next) => {
         /* Se envia el token en la cabecera  */
         let token = req.headers.authorization
         console.log("mytoken-backend",token)
+        
         if(!token){
             return res.status(401).json({ok:false, msg:"Sin autorizacion por token"})
         }
@@ -20,20 +21,19 @@ export const verificarToken = (req, res, next) => {
     } catch (error) {
         res.json({msg: 'error token'})
     }
-    
 }
 
 
 const verifyAdmin = (req, res, next)=>{
     if(req.id_rol==1){
-        return next;
+        return next();
     }
     res.status(404).json({ok: false, msg:'Usuario no autorizado'})
 }
 
 const verifyPrincipal = (req, res, next)=>{
-    if(req.id_rol==1){
-        return next;
+    if(req.id_rol==2){
+        return next();
     }
     res.status(404).json({ok: false, msg:'Usuario no autorizado'})
 }

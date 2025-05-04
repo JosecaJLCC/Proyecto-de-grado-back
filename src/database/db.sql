@@ -76,19 +76,38 @@ create table if not exists domicilio(
 create table if not exists establecimiento(
 	id_establecimiento int primary key references direccion(id_direccion),
     nombre varchar(50) not null,
-    red varchar(50) not null,
-    subred varchar(50) not null,
     foreign key(id_establecimiento) references direccion(id_direccion)
 );
 
+create table if not exists atencion(
+	id_atencion bigint primary key auto_increment not null,
+    id_usuario int not null,
+    id_persona int not null,
+    id_establecimiento int not null,
+    fecha_atencion datetime,
+    foreign key(id_usuario) references usuario(id_usuario),
+	foreign key(id_persona) references persona(id_persona),
+	foreign key(id_establecimiento) references establecimiento(id_establecimiento)
+);
+
+# USUARIO ADMINISTRADOR
 insert into persona(ci, extension, nombre, paterno, materno, nacionalidad, estado_civil, nro_telf, sexo, fecha_nacimiento)
 values("12796720", "LP", "JOSE LUIS", "CONDORI", "CHAMBI", "BOLIVIANA", "SOLTERO", "73047440", "MASCULINO", "2000-03-12");
+# USUARIO PERSONAL
+insert into persona(ci, extension, nombre, paterno, materno, nacionalidad, estado_civil, nro_telf, sexo, fecha_nacimiento)
+values("2079895", "LP", "VICENTA", "CHAMBI", "CHAMBI", "BOLIVIANA", "SOLTERO", "67060014", "FEMENINO", "1959-04-05");
 
+# USUARIO ADMINISTRADOR
 insert into personal(perfil, profesion, area_trabajo, fecha_ingreso, id_persona)
 values("miperfil.jpg", "ESTUDIANTE", "ADMINISTRACION", "2024-08-01", 1);
+# USUARIO PERSONAL
+insert into personal(perfil, profesion, area_trabajo, fecha_ingreso, id_persona)
+values("miperfil.jpg", "FARMACEUTICA", "FARMACIA", "2021-08-10", 12);
+
+#USUARIO PERSONAL
+#...
 
 insert into rol(nombre) values('ADMINISTRADOR'),('DIRECTOR'),('PERSONAL');
-
 
 #prueba para insertar una direccion y un domicilio por medio de la herencia en sql
 insert into direccion(departamento, municipio, zona, av_calle)
@@ -102,10 +121,13 @@ select * from usuario;
 select * from rol;
 select * from direccion;
 select * from domicilio;
-select ci, extension from persona where ci = '12796720' and extension = 'LPa';
+
+select concat(ci, ' ', extension) as cedula from persona where ci = '12796720' and extension = 'LP';
 
 delete from persona where id_persona=3;
 delete from usuario where id_usuario=1;
 
 select ci, extension from persona
 where ci = "1111111" and extension = "LPa";
+
+select * from usuario where correo = 'informaticajlcc@gmail.com'

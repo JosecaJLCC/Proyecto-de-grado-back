@@ -1,16 +1,17 @@
 import { Router } from 'express';
-import {crearPersona, verificarCI} from '../controllers/persona.controller.js'
+import {crearPersona, verificarCI, mostrarPersonas} from '../controllers/persona.controller.js'
+import { verificarToken } from '../middlewares/jwt.middleware.js';
 
  
 export const rutas = Router();
 
-/* rutas.get('/personas', getData)
+rutas.get('/show', mostrarPersonas)
 
-rutas.get('/personas/:id', getDataById) */
+/* rutas.get('/personas/:id', getDataById) */
 
-rutas.post('/post', crearPersona)
+rutas.post('/register'/* , verificarToken */ ,crearPersona)
 
-rutas.post('/ci', verificarCI)
+rutas.post('/ci'/* ,verificarToken */, verificarCI)
 
 /* rutas.patch('/personas/:id', putDataById)
 
