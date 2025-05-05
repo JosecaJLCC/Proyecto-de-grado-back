@@ -90,6 +90,15 @@ create table if not exists atencion(
 	foreign key(id_establecimiento) references establecimiento(id_establecimiento)
 );
 
+create table if not exists registro_log(
+	id_log bigint primary key auto_increment not null,
+    id_usuario int not null,
+    id_establecimiento int not null,
+    fecha_log datetime,
+    foreign key(id_usuario) references usuario(id_usuario),
+	foreign key(id_establecimiento) references establecimiento(id_establecimiento)
+);
+
 # USUARIO ADMINISTRADOR
 insert into persona(ci, extension, nombre, paterno, materno, nacionalidad, estado_civil, nro_telf, sexo, fecha_nacimiento)
 values("12796720", "LP", "JOSE LUIS", "CONDORI", "CHAMBI", "BOLIVIANA", "SOLTERO", "73047440", "MASCULINO", "2000-03-12");
@@ -115,12 +124,15 @@ values('LA PAZ', 'EL ALTO', 'NUEVOS HORIZONTES I', 'D-3');
 insert into domicilio(id_domicilio, nro_puerta, id_persona)
 values(1, 763, 1);
 
+#SELECT DE TODAS LAS ENTIDADES
 select * from persona;
 select * from personal;
 select * from usuario;
 select * from rol;
 select * from direccion;
 select * from domicilio;
+select * from establecimiento;
+select * from registro_log;
 
 select concat(ci, ' ', extension) as cedula from persona where ci = '12796720' and extension = 'LP';
 

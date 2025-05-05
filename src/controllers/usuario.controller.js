@@ -3,13 +3,21 @@ import bcrypt from "bcryptjs";
 import jwt from 'jsonwebtoken';
 import { JWT_TOKEN } from "../config.js";
 import { rolModel } from "../models/rol.model.js";
+import { establecimientoModel } from "../models/establecimiento.model.js";
+import { logsModel } from "../models/logs.js";
 
 const inicioSesion =  async(req, res)=>{
     try {
         /* Se verifica que no haya un campo vacio en los siguientes atributos */
-        const {correo, clave} = req.body;
-        if(!correo || !clave){
+        const {correo, clave, id_establecimiento} = req.body;
+        if(!correo || !clave || !id_establecimiento){
             return res.status(404).json({ok:false, msg:"Existen campos sin llenar", correo: false, clave: false})
+        }
+        /* Para la verificacion de la existencia del establecimiento */
+        const establecimiento = await establecimientoModel.verificarEstablecimiento(id_establecimiento);
+        /* Siempre habran los CS ya que lo cargamos en el front desde el back pero no esta demas hacer esta validacion */
+        if(establecimiento.length<=0){
+            return res.status(404).json({ok:false, msg:"El establecimiento no existe", correo: false, clave: false})
         }
         /* Hallamos el correo del usuario para la auntenticacion nota: es un array de objetos [{},{},...]*/
         const usuario = await usuarioModel.correoUsuario(correo);
@@ -27,8 +35,12 @@ const inicioSesion =  async(req, res)=>{
         /* Se envia como parametros en el token el correo y id_rol */
         const token = jwt.sign({
             correo: usuario[0].correo,
-            id_rol: usuario[0].id_rol
+            id_rol: usuario[0].id_rol,
+            id_establecimiento: establecimiento[0].id_establecimiento,
         }, JWT_TOKEN, {expiresIn: '1h'})
+
+        /* Se haran registro de los logs de los usuarios para casos de auditoria */
+        const registroLogs = await logsModel.registrarLogs({id_usuario: usuario[0].id_usuario, id_establecimiento: establecimiento[0].id_establecimiento})
 
         /* const resultado = await usuarioModel.inicioSesion(correo, clave) */
         res.json({ ok:true, token:token })
@@ -75,9 +87,14 @@ const perfil = async(req, res) => {
         /* Como en el middleware jwt puse correo en el req.correo=correo entonces eso se enviara aqui como req.correo */
         const usuario = await usuarioModel.correoUsuario(req.correo);
         /* se envia el id_rol para devolver el nombre de rol */
-        const rol = await rolModel.mostrarRol(usuario[0].id_rol)
+        const rol = await rolModel.mostrarRol(req.id_rol)
         /* agregamos el rol de usuario al array de objetos usuario */
-        usuario[0]={...usuario[0], rol: rol[0].nombre}
+        let centro_salud = await establecimientoModel.verificarEstablecimiento(req.id_establecimiento)
+        usuario[0]={...usuario[0], 
+                rol: rol[0].nombre, 
+            id_establecimiento: centro_salud[0].id_establecimiento, 
+            nombre_establecimiento: centro_salud[0].nombre
+        }
         console.log("ROL DE usuario", usuario);
         res.json({ok: true, msg: usuario })
     } catch (error) {

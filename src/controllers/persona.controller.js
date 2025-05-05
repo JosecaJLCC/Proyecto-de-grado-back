@@ -15,14 +15,14 @@ export const crearPersona = async(req, res)=>{
             !nacionalidad || !estado_civil || 
             !nro_telf || !sexo || !fecha_nacimiento ||
             !departamento || !municipio || !zona || !av_calle || !nro_puerta){
-                return res.status(400).json({ok:false, message:'Faltan datos por llenar en PERSONA CONTROLLER'})
+                return res.status(400).json({ok:false, message:'Faltan datos por llenar'})
             }
 
         /* Verificamos si el ci existe */
         const verificarCI= await personaModel.verificarCI(ci, extension);
-        console.log("mi verificacion de ci",verificarCI.length)
+        /* console.log("mi verificacion de ci",verificarCI.length) */
         if(verificarCI.length>0){
-            return res.status(400).json({ok:false, message:'Ya existe un registro con el ci'})
+            return res.status(400).json({ok:false, message:`Ya existe un registro con el ci ${ci}`})
         }
         /* Mandamos a personaModel los datos a agregar de una persona */
         const personaResultado = await personaModel.crearPersona({ci, extension, nombre, paterno,

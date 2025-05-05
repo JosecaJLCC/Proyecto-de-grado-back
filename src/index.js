@@ -1,8 +1,11 @@
 import express from 'express';
 import morgan from 'morgan'
 import { PORT } from './config.js'
+/* rutas */
 import rutasPersona from './routes/persona.route.js';
 import rutasUsuario from './routes/usuario.route.js';
+import rutasEstablecimiento from './routes/establecimiento.route.js';
+/* middlewares */
 import cors from 'cors'
 
 const app = express();
@@ -19,6 +22,7 @@ app.use(cors());
 /* rutas */
 app.use('/api/v1/people', rutasPersona);
 app.use('/api/v1/users', rutasUsuario);
+app.use('/api/v1/stablishment', rutasEstablecimiento);
 
 /* servidor corriendo */
 app.listen(PORT, () => {

@@ -14,9 +14,10 @@ export const verificarToken = (req, res, next) => {
         /* el token viene en este formato: bearer tu_token */
         /* Por eso dividimos la parte del nuestro token que es lo que nos importa */
         token=token.split(" ")[1];
-        const {correo, id_rol} = jwt.verify(token, JWT_TOKEN);
+        const {correo, id_rol, id_establecimiento} = jwt.verify(token, JWT_TOKEN);
         req.correo=correo;
         req.id_rol=id_rol;
+        req.id_establecimiento=id_establecimiento;
         next()    
     } catch (error) {
         res.json({msg: 'error token'})
