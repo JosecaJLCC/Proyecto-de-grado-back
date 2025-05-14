@@ -44,8 +44,20 @@ const mostrarPersonas = async() =>{
     return resultado[0];
 }
 
+const mostrarPersonaByCi= async(ci) => {
+    const query = {
+        text: `select * from persona where concat(ci, " ", extension)=?;`,
+        values: [ci]
+    }
+    /* devuelve un array de array de objetos [[{}],[{}]] si el primero esta vacio pues hacer .length para la validacion */
+    const resultado = await pool.query(query.text, query.values);
+    /* Se envia el primer array donde se mandan los valores ci, extension si fueron encontrados y si no, envia un array vacio */
+    return resultado[0];
+}
+
 export const personaModel = {
     crearPersona,
     verificarCI,
-    mostrarPersonas
+    mostrarPersonas,
+    mostrarPersonaByCi
 }

@@ -35,6 +35,7 @@ const inicioSesion =  async(req, res)=>{
         /* Se envia como parametros en el token el correo y id_rol */
         const token = jwt.sign({
             correo: usuario[0].correo,
+            
             id_rol: usuario[0].id_rol,
             id_establecimiento: establecimiento[0].id_establecimiento,
         }, JWT_TOKEN, {expiresIn: '1h'})

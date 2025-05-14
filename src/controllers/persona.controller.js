@@ -67,7 +67,7 @@ export const verificarCI =  async(req, res)=>{
         }
         res.status(200).json({ok:true, message:`El ci ${ci+" "+extension} ya se encuentra registrado`}) 
     } catch (error) {
-        console.log("Error en GET id", error)
+        console.log("Error en verificar ci", error)
     }
 }
 
@@ -81,15 +81,46 @@ export const mostrarPersonas = async(req, res) =>{
         }
         res.status(200).json({ok:true, resultado: resultado }) 
     } catch (error) {
-        console.log("Error en GET id", error)
+        console.log("Error en GET", error)
     }
 }
+
+export const mostrarPersonaByCi = async(req, res) => {
+    try {
+        let ci=req.params.id;
+        console.log("my ci", ci)
+        const resultadoPersona = await personaModel.mostrarPersonaByCi(ci);
+        if(resultadoPersona.length<=0){
+            return res.status(404).json(`No existen la persona con ci${ci}`)
+        }
+        /* obtenemos el id_persona de persona */
+        let id_persona = resultadoPersona[0].id_persona;
+        const resultadoDomicilio = await domicilioModel.mostrarDomicilioById(id_persona);
+        if(resultadoDomicilio.length<=0){
+            return res.status(404).json(`No existen el domiclio del ci${id}`)
+        }
+        
+        /* obtenemos el id_domicilio de domicilio */
+        let id_domicilio=resultadoDomicilio[0].id_domicilio;
+        const resultadoDireccion = await direccionModel.mostrarDireccionById(id_domicilio);
+        /* Verificamos que toda respuesta sea mayor a cero */
+        if(resultadoDireccion.length<=0){
+            return res.status(404).json(`No existen la direccion del domicilio ${id}`)
+        }
+        let resultado = { ...resultadoPersona[0], ...resultadoDireccion[0], ...resultadoDomicilio[0]};
+
+        res.status(200).json({ok: true, resultado: resultado})
+    } catch (error) {
+        console.log("Error en GET id persona", error)
+    }
+} 
 
 
 export const personaController = {
     crearPersona,
     verificarCI,
-    mostrarPersonas
+    mostrarPersonas,
+    mostrarPersonaByCi,
 }
 
 /* 

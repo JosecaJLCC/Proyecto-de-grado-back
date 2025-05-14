@@ -7,11 +7,20 @@ const crearDireccion = async({departamento, municipio, zona, av_calle}) =>{
                 values(?,?,?,?)`,
         values: [departamento, municipio, zona, av_calle]
     }
+    const resultado = await pool.query(query.text, query.values);
+    return resultado[0];
+}
 
+const mostrarDireccionById = async(id) =>{
+    const query = {
+        text: `select * from direccion where id_direccion = ?;`,
+        values: [id]
+    }
     const resultado = await pool.query(query.text, query.values);
     return resultado[0];
 }
 
 export const direccionModel = {
-    crearDireccion
+    crearDireccion,
+    mostrarDireccionById
 }

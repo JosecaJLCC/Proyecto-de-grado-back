@@ -23,9 +23,12 @@ create table if not exists personal(
     area_trabajo varchar(50) not null,
     fecha_ingreso date not null,
     id_persona int not null,
-    foreign key(id_persona) references persona(id_persona),
+    CONSTRAINT fk_persona_personal
+	FOREIGN KEY (id_persona) REFERENCES persona(id_persona)
+	ON DELETE CASCADE,
     primary key(id_personal)
 );
+
 
 create table if not exists usuario(
 	id_usuario int auto_increment not null,
@@ -52,9 +55,12 @@ create table if not exists paciente(
     estatura varchar(10),
     peso varchar(10),
     id_persona int not null,
-    foreign key (id_persona) references persona(id_persona),
+    constraint fk_persona_paciente
+	foreign key (id_persona) references persona(id_persona)
+	on delete cascade,
     primary key (id_paciente)
 );
+
 
 create table if not exists direccion(
 	id_direccion int auto_increment not null,
@@ -69,8 +75,12 @@ create table if not exists domicilio(
 	id_domicilio int primary key references direccion(id_direccion), 
 	nro_puerta mediumint,
     id_persona int,
-    foreign key(id_domicilio) references direccion(id_direccion),
-    foreign key(id_persona) references persona(id_persona)
+    constraint fk_direccion_domicilio
+    foreign key(id_domicilio) references direccion(id_direccion)
+    on delete cascade,
+    constraint fk_persona_domicilio
+	foreign key(id_persona) references persona(id_persona)
+	on delete cascade
 );
 
 create table if not exists establecimiento(
@@ -86,9 +96,15 @@ create table if not exists atencion(
     id_establecimiento int not null,
     fecha_atencion datetime,
     foreign key(id_usuario) references usuario(id_usuario),
-	foreign key(id_persona) references persona(id_persona),
+    
+	constraint fk_persona_atencion
+	foreign key(id_persona) references persona(id_persona)
+	on delete cascade,
+    
 	foreign key(id_establecimiento) references establecimiento(id_establecimiento)
 );
+
+
 
 create table if not exists registro_log(
 	id_log bigint primary key auto_increment not null,
@@ -113,9 +129,6 @@ values("miperfil.jpg", "ESTUDIANTE", "ADMINISTRACION", "2024-08-01", 1);
 insert into personal(perfil, profesion, area_trabajo, fecha_ingreso, id_persona)
 values("miperfil.jpg", "FARMACEUTICA", "FARMACIA", "2021-08-10", 12);
 
-#USUARIO PERSONAL
-#...
-
 insert into rol(nombre) values('ADMINISTRADOR'),('DIRECTOR'),('PERSONAL');
 
 #prueba para insertar una direccion y un domicilio por medio de la herencia en sql
@@ -123,6 +136,10 @@ insert into direccion(departamento, municipio, zona, av_calle)
 values('LA PAZ', 'EL ALTO', 'NUEVOS HORIZONTES I', 'D-3');
 insert into domicilio(id_domicilio, nro_puerta, id_persona)
 values(1, 763, 1);
+
+
+SHOW CREATE TABLE domicilio;
+SELECT * FROM domicilio WHERE id_persona = 2;
 
 #SELECT DE TODAS LAS ENTIDADES
 select * from persona;
@@ -136,10 +153,13 @@ select * from registro_log;
 
 select concat(ci, ' ', extension) as cedula from persona where ci = '12796720' and extension = 'LP';
 
-delete from persona where id_persona=3;
+delete from persona where id_persona=10;
+delete from domicilio where id_domicilio=5;
 delete from usuario where id_usuario=1;
 
 select ci, extension from persona
 where ci = "1111111" and extension = "LPa";
 
-select * from usuario where correo = 'informaticajlcc@gmail.com'
+select * from usuario where correo = 'informaticajlcc@gmail.com';
+
+select * from registro_log;
