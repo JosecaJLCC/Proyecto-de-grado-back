@@ -36,7 +36,7 @@ const verificarCI = async(ci, extension) =>{
 /* Modelo para mostrar las personas registradas como nuevo paciente */
 const mostrarPersonas = async() =>{
     const query = {
-        text: `select concat(ci, ' ', extension) as cedula, paterno, materno, nombre from persona;`,
+        text: `select id_persona, concat(ci, ' ', extension) as cedula, paterno, materno, nombre from persona;`,
     }
     /* devuelve un array de array [[],[]] si el primero esta vacio pues hacer .length para la validacion */
     const resultado = await pool.query(query.text);

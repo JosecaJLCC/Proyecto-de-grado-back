@@ -1,5 +1,4 @@
 create database cs_copacabana;
-use cs_copacabana;
 
 create table if not exists persona(
 	id_persona int auto_increment not null,
@@ -28,7 +27,6 @@ create table if not exists personal(
 	ON DELETE CASCADE,
     primary key(id_personal)
 );
-
 
 create table if not exists usuario(
 	id_usuario int auto_increment not null,
@@ -60,7 +58,6 @@ create table if not exists paciente(
 	on delete cascade,
     primary key (id_paciente)
 );
-
 
 create table if not exists direccion(
 	id_direccion int auto_increment not null,
@@ -104,8 +101,6 @@ create table if not exists atencion(
 	foreign key(id_establecimiento) references establecimiento(id_establecimiento)
 );
 
-
-
 create table if not exists registro_log(
 	id_log bigint primary key auto_increment not null,
     id_usuario int not null,
@@ -137,7 +132,6 @@ values('LA PAZ', 'EL ALTO', 'NUEVOS HORIZONTES I', 'D-3');
 insert into domicilio(id_domicilio, nro_puerta, id_persona)
 values(1, 763, 1);
 
-
 SHOW CREATE TABLE domicilio;
 SELECT * FROM domicilio WHERE id_persona = 2;
 
@@ -150,16 +144,15 @@ select * from direccion;
 select * from domicilio;
 select * from establecimiento;
 select * from registro_log;
+select * from atencion;
 
 select concat(ci, ' ', extension) as cedula from persona where ci = '12796720' and extension = 'LP';
 
-delete from persona where id_persona=10;
-delete from domicilio where id_domicilio=5;
-delete from usuario where id_usuario=1;
+select date(fecha_log) from registro_log;
 
-select ci, extension from persona
-where ci = "1111111" and extension = "LPa";
+#Para mostrar los pacientes solo del dia actual
+select * 
+from registro_log 
+where date(fecha_log) = date(now());
 
-select * from usuario where correo = 'informaticajlcc@gmail.com';
-
-select * from registro_log;
+delete from persona where id_persona=12;

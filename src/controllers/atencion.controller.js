@@ -1,5 +1,6 @@
 import { establecimientoModel } from "../models/establecimiento.model.js";
 import { direccionModel } from "../models/direccion.model.js";
+import { atencionModel } from "../models/atencion.model.js";
 
 const registrarAtencion = async(req, res)=>{
     try {
@@ -29,12 +30,37 @@ const registrarAtencion = async(req, res)=>{
         }
         res.status(201).json({ok:true, message:"Establecimiento agregada con exito"});
     } catch (error) {
-        console.log("Error en Crear Establecimiento", error)
+        console.log("Error en registrar atencion", error)
     }
 }
 
+const mostrarAtencion = async(req, res) => {
+    try {
+        const resultado = await atencionModel.mostrarAtencion();
+        if(resultado[0].length<=0){
+            return res.status(404).json(`No existen establecimientos para agregrar`);
+        }
+        res.status(201).json({ok:true, resultado:resultado});
+    } catch (error) {
+        console.log("Error en mostrar atencion", error);
+    }
+}
 
-export const establecimientoController = {
+const mostrarHistorialAtencion = async(req, res) => {
+    try {
+        const resultado = await atencionModel.mostrarHistorialAtencion();
+        if(resultado[0].length<=0){
+            return res.status(404).json(`No existen establecimientos para agregrar`);
+        }
+        res.status(201).json({ok:true, resultado:resultado});
+    } catch (error) {
+        console.log("Error en mostrar el historial de atencion", error);
+    }
+}
+
+export const atencionController = {
     registrarAtencion, 
+    mostrarAtencion,
+    mostrarHistorialAtencion,
     
 }

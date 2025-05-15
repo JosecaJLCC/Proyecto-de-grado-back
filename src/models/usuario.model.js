@@ -22,7 +22,7 @@ const inicioSesion = async(correo, clave) => {
 
 const correoUsuario = async(correo) => {
     const query = {
-        text: `select * from usuario where correo = ?;`,
+        text: `select id_usuario, nombre_usuario, correo, id_personal, id_rol  from usuario where correo = ?;`,
         values: [correo]
     }
     const resultado = await pool.query(query.text, query.values);

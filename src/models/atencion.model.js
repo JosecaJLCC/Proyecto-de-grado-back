@@ -14,12 +14,26 @@ const registrarAtencion = async({id_usuario, id_persona, id_establecimiento}) =>
 
 const mostrarAtencion = async()=>{
     const query = {
-        text: `select * from atencion`,
+        text: `select * 
+                from registro_log 
+                where date(fecha_log) = date(now());`,
+    }
+
+    const resultado = await pool.query(query.text);
+    return resultado[0];
+}
+
+const mostrarHistorialAtencion = async()=>{
+    const query = {
+        text: `select * 
+                from registro_log;`,
     }
 
     const resultado = await pool.query(query.text);
     return resultado[0];
 }
 export const atencionModel = {
-    registrarAtencion
+    registrarAtencion,
+    mostrarAtencion,
+    mostrarHistorialAtencion,
 }

@@ -5,6 +5,7 @@ import { PORT } from './config.js'
 import rutasPersona from './routes/persona.route.js';
 import rutasUsuario from './routes/usuario.route.js';
 import rutasEstablecimiento from './routes/establecimiento.route.js';
+import rutasAtencion from './routes/atencion.route.js'
 /* middlewares */
 import cors from 'cors'
 
@@ -23,7 +24,7 @@ app.use(cors());
 app.use('/api/v1/people', rutasPersona);
 app.use('/api/v1/users', rutasUsuario);
 app.use('/api/v1/stablishment', rutasEstablecimiento);
-
+app.use('api/v1/attention', rutasAtencion);
 /* servidor corriendo */
 app.listen(PORT, () => {
    return console.log(`Servidor escuchando en el puerto ${PORT}`)
