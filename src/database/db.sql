@@ -156,3 +156,35 @@ from registro_log
 where date(fecha_log) = date(now());
 
 delete from persona where id_persona=12;
+
+use cs_copacabana;
+
+## Para mostrar los datos del registro de paciente de una fecha establecida
+##ya que no todo esta en una tabla asi que se debe hacer lo siguiente:
+select (select concat(xp.ci, " ", xp.extension) as cedula
+		from persona xp 
+		where xp.id_persona=xa.id_persona) as cedula, 
+        (select concat (xp.paterno," ", xp.materno, " ", xp.nombre) as nombres
+		from persona xp 
+		where xp.id_persona=xa.id_persona) as nombres,
+	
+        (select xe.nombre 
+		from establecimiento xe
+		where xe.id_establecimiento = xa.id_establecimiento) as establecimiento
+from atencion xa
+where date(xa.fecha_atencion) = date(now());
+
+## Para mostrar los datos del registro, ya que no todo esta en una tabla asi que se debe hacer lo siguiente:
+select (select concat(xp.ci, " ", xp.extension) as cedula
+		from persona xp 
+		where xp.id_persona=xa.id_persona) as cedula, 
+        (select concat (xp.paterno," ", xp.materno, " ", xp.nombre) as nombres
+		from persona xp 
+		where xp.id_persona=xa.id_persona) as nombres,
+	
+        (select xe.nombre 
+		from establecimiento xe
+		where xe.id_establecimiento = xa.id_establecimiento) as establecimiento,
+        
+        xa.fecha_atencion
+from atencion xa;

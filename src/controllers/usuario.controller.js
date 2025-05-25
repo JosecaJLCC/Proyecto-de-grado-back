@@ -10,6 +10,7 @@ const inicioSesion =  async(req, res)=>{
     try {
         /* Se verifica que no haya un campo vacio en los siguientes atributos */
         const {correo, clave, id_establecimiento} = req.body;
+        console.log(typeof(correo), typeof(id_establecimiento), typeof(clave))
         if(!correo || !clave || !id_establecimiento){
             return res.status(404).json({ok:false, msg:"Existen campos sin llenar", correo: false, clave: false})
         }
@@ -19,19 +20,24 @@ const inicioSesion =  async(req, res)=>{
         if(establecimiento.length<=0){
             return res.status(404).json({ok:false, msg:"El establecimiento no existe", correo: false, clave: false})
         }
+        
         /* Hallamos el correo del usuario para la auntenticacion nota: es un array de objetos [{},{},...]*/
         const usuario = await usuarioModel.correoUsuario(correo);
 
         /* Si usuario.length es 0 entonces no existe usuarios con ese correo, nota: es un array de objetos asi que pueden ser más */
+        
         if(usuario.length<=0){
             return res.status(404).json({ ok:false, msg:`Correo no encontrado`, correo: false, clave: true })
         }
+        console.log("my user",usuario)
         /* Como es un array de objetos, pero como solo puede haber un correo, igual debemos apuntar a la posicion cero usuario[0] */
         const isMatch = await bcrypt.compare(clave, usuario[0].clave)
+        
         /* isMatch devuelve true si hay coincidencia y false si no lo hay */
         if(!isMatch){
             return res.status(404).json({ ok:false, msg:`¡Clave no encontrada!`, correo: true, clave: false })
         }
+        
         /* Se envia como parametros en el token el correo y id_rol */
         const token = jwt.sign({
             correo: usuario[0].correo,
@@ -46,7 +52,7 @@ const inicioSesion =  async(req, res)=>{
         /* const resultado = await usuarioModel.inicioSesion(correo, clave) */
         res.json({ ok:true, token:token })
     } catch (error) {
-        console.log(error)
+        console.log("my error",error)
         res.status(500).json({ok:false, msg:"error server login"})
     }
 }

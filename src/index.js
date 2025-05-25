@@ -24,7 +24,7 @@ app.use(cors());
 app.use('/api/v1/people', rutasPersona);
 app.use('/api/v1/users', rutasUsuario);
 app.use('/api/v1/stablishment', rutasEstablecimiento);
-app.use('api/v1/attention', rutasAtencion);
+app.use('/api/v1/attention', rutasAtencion);
 /* servidor corriendo */
 app.listen(PORT, () => {
    return console.log(`Servidor escuchando en el puerto ${PORT}`)

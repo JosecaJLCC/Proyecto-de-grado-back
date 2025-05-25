@@ -14,9 +14,18 @@ const registrarAtencion = async({id_usuario, id_persona, id_establecimiento}) =>
 
 const mostrarAtencion = async()=>{
     const query = {
-        text: `select * 
-                from registro_log 
-                where date(fecha_log) = date(now());`,
+        text:   `select (select concat(xp.ci, " ", xp.extension) as cedula
+                    from persona xp 
+                    where xp.id_persona=xa.id_persona) as cedula, 
+                    (select concat (xp.paterno," ", xp.materno, " ", xp.nombre) as nombres
+                    from persona xp 
+                    where xp.id_persona=xa.id_persona) as nombres,
+                
+                    (select xe.nombre 
+                    from establecimiento xe
+                    where xe.id_establecimiento = xa.id_establecimiento) as establecimiento
+                from atencion xa
+                where date(xa.fecha_atencion) = date(now());`,
     }
 
     const resultado = await pool.query(query.text);
@@ -25,8 +34,19 @@ const mostrarAtencion = async()=>{
 
 const mostrarHistorialAtencion = async()=>{
     const query = {
-        text: `select * 
-                from registro_log;`,
+        text:   `select (select concat(xp.ci, " ", xp.extension) as cedula
+                    from persona xp 
+                    where xp.id_persona=xa.id_persona) as cedula, 
+                    (select concat (xp.paterno," ", xp.materno, " ", xp.nombre) as nombres
+                    from persona xp 
+                    where xp.id_persona=xa.id_persona) as nombres,
+                
+                    (select xe.nombre 
+                    from establecimiento xe
+                    where xe.id_establecimiento = xa.id_establecimiento) as establecimiento,
+                    
+                    xa.fecha_atencion
+                from atencion xa;`,
     }
 
     const resultado = await pool.query(query.text);
