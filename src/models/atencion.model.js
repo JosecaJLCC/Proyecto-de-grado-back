@@ -52,8 +52,18 @@ const mostrarHistorialAtencion = async()=>{
     const resultado = await pool.query(query.text);
     return resultado[0];
 }
+
+const verificarAtencion = async(id_persona) =>{
+    const query = {
+        text:`select * from atencion where id_persona = ? and date(fecha_atencion) = date(now()) `,
+        values: [id_persona]
+    }
+    const resultado = await pool.query(query.text, query.values);
+    return resultado[0];
+}
 export const atencionModel = {
     registrarAtencion,
     mostrarAtencion,
     mostrarHistorialAtencion,
+    verificarAtencion,
 }

@@ -9,9 +9,13 @@ const registrarAtencion = async(req, res)=>{
         if(!id_usuario || !id_persona || !id_establecimiento){
             return res.status(400).json({ok:false, message:'Faltan datos por llenar en ATENCION CONTROLLER'})
         }
+        const verificarAtencion = await atencionModel.verificarAtencion(id_persona)
+        if(verificarAtencion.length>0){
+            return res.status(409).json({ok:false, message:`El paciente ya fue registrado`});
+        }
        const resultado = await atencionModel.registrarAtencion({id_usuario, id_persona, id_establecimiento})
         if(resultado.affectedRows<=0){
-            return res.status(404).json(`No existen establecimientos para agregrar`);
+            return res.status(404).json({ok:false, message:`No existen establecimientos para agregrar`});
         }
         res.status(201).json({ok:true, message:"¡Registro de atención exitosa!"});
     } catch (error) {
