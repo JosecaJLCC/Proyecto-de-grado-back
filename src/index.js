@@ -1,24 +1,27 @@
 import express from 'express';
 import morgan from 'morgan'
 import { PORT } from './config.js'
+/* middlewares */
+import cors from 'cors'
 /* rutas */
 import rutasPersona from './routes/persona.route.js';
 import rutasUsuario from './routes/usuario.route.js';
 import rutasEstablecimiento from './routes/establecimiento.route.js';
 import rutasAtencion from './routes/atencion.route.js'
-/* middlewares */
-import cors from 'cors'
 
 const app = express();
 /* middlewares */
 app.disable('x-powered-by')
-/* Esto es para habilitar solicitudes con cuerpo en formato json, req.body */<
+/* Esto es para habilitar solicitudes con cuerpo en formato json, req.body */
 app.use(express.json());
 /* Esto es para habilitar solicitudes de formulario */
 app.use(express.urlencoded({extended:true}));
 app.use(morgan('dev'));
 
 app.use(cors());
+
+/*Para las rutas de la carpeta donde conservo las fotos de perfil  */
+app.use('/uploads', express.static('./src/uploads'));
 
 /* rutas */
 app.use('/api/v1/people', rutasPersona);

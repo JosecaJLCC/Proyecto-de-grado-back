@@ -6,6 +6,8 @@ import { rolModel } from "../models/rol.model.js";
 import { establecimientoModel } from "../models/establecimiento.model.js";
 import { logsModel } from "../models/logs.js";
 
+import fs from 'node:fs'
+
 const inicioSesion =  async(req, res)=>{
     try {
         /* Se verifica que no haya un campo vacio en los siguientes atributos */
@@ -56,12 +58,42 @@ const inicioSesion =  async(req, res)=>{
         res.status(500).json({ok:false, msg:"error server login"})
     }
 }
+/* cambiar de nombre al archivo imagen de perfil */
+const guardarImagen = (archivo)=>{
+    const newName = `${Date.now()}-${archivo.originalname}`
+    const newPath = `./src/uploads/${newName}`;
+    fs.renameSync(archivo.path, newPath);
+    return newName;
+}
 
-const registroUsuario = async(req, res)=>{
-    const { nombre_usuario, correo, clave, id_personal, id_rol }= req.body;
+/* const registroUsuario = async(req, res)=>{
+    try {
+        const { nombre_usuario, correo, clave, id_persona, id_rol }= req.body;
+    const perfil = req.file;
+    guardarImagen(perfil);
+    console.log('mi perfil 2: ', perfil)
+    console.log('mi body: ',req.body);
+    res.json({ok: "TRUE"});
+    } catch (error) {
+        res.status(400).json({error: "ok"})
+        console.log("mi error: ", error)
+    }
+    
+} */
+
+const registroUsuario = async(req, res) =>{
+    const { nombre_usuario, correo, clave, id_persona, id_rol }= req.body;
+    let nombreArchivo = ""
+    if(req.file){
+        const perfil = req.file;
+        nombreArchivo = guardarImagen(perfil);
+    }
+    else{
+        nombreArchivo = 'usuario.png'
+    } 
     try {
         /* Se verifica que no haya un campo vacio en los siguientes atributos */
-        if(!nombre_usuario || !correo || !clave || !id_personal || !id_rol){
+        if(!nombre_usuario || !correo || !clave || !id_persona || !id_rol){
             return res.status(400).json("datos incompletos para agregar")
         }
         const usuario = await usuarioModel.correoUsuario(correo);
@@ -74,14 +106,7 @@ const registroUsuario = async(req, res)=>{
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(clave, salt)
 
-/* Aqui el token no es necesario ya que no cualquiera va a poder registrarse al sistema */
-
-        /* Para la generacion de token de inicio de sesion */
-        /* const token = jwt.sign({
-            correo: correo
-        }, JWT_TOKEN, {expiresIn: '1h'}) */
-
-        const resultado =await usuarioModel.registrarUsuario({ nombre_usuario, correo, clave: hashedPassword, id_personal, id_rol })
+        const resultado =await usuarioModel.registrarUsuario({ nombre_usuario, correo, clave: hashedPassword, perfil:nombreArchivo, id_persona, id_rol })
         res.json({ ok:true, msg: resultado/* , token: token */})
     } catch (error) {
         console.log(error)

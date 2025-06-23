@@ -1,4 +1,5 @@
 create database cs_copacabana;
+use cs_copacabana;
 
 create table if not exists persona(
 	id_persona int auto_increment not null,
@@ -15,18 +16,13 @@ create table if not exists persona(
     primary key(id_persona)
 );
 
-create table if not exists personal(
-	id_personal int auto_increment not null,
-    perfil varchar(255),
-    profesion varchar(50) not null,
-    area_trabajo varchar(50) not null,
-    fecha_ingreso date not null,
-    id_persona int not null,
-    CONSTRAINT fk_persona_personal
-	FOREIGN KEY (id_persona) REFERENCES persona(id_persona)
-	ON DELETE CASCADE,
-    primary key(id_personal)
+create table if not exists rol(
+	id_rol int auto_increment not null,
+    nombre varchar(50) not null,
+    primary key(id_rol)
 );
+
+insert into rol(nombre) values('ADMINISTRADOR'),('DIRECTOR'),('PERSONAL');
 
 create table if not exists usuario(
 	id_usuario int auto_increment not null,
@@ -34,17 +30,12 @@ create table if not exists usuario(
     correo varchar(100) unique not null,
     clave varchar(255) unique not null,
     fecha_creacion datetime,
-    id_personal int,
+    perfil varchar(255),
     id_rol int,
-    foreign key (id_personal) references personal(id_personal),
+    id_persona int,
+    foreign key (id_persona) references persona(id_persona),
     foreign key (id_rol) references rol(id_rol),
     primary key(id_usuario)
-);
-
-create table if not exists rol(
-	id_rol int auto_increment not null,
-    nombre varchar(50) not null,
-    primary key(id_rol)
 );
 
 create table if not exists paciente(
@@ -54,9 +45,18 @@ create table if not exists paciente(
     peso varchar(10),
     id_persona int not null,
     constraint fk_persona_paciente
-	foreign key (id_persona) references persona(id_persona)
-	on delete cascade,
+	foreign key (id_persona) references persona(id_persona) on delete cascade,
     primary key (id_paciente)
+);
+
+create table if not exists historial(
+	id_historial int auto_increment not null,
+    diagnostico varchar(100) not null,
+    descripcion varchar(255) not null,
+    id_paciente int,
+    constraint fk_paciente_historial
+	foreign key (id_paciente) references paciente(id_paciente) on delete cascade,
+    primary key(id_historial)
 );
 
 create table if not exists direccion(
@@ -68,9 +68,11 @@ create table if not exists direccion(
     primary key (id_direccion)
 );
 
+insert into direccion(departamento, municipio, zona, av_calle) values('LA PAZ', 'EL ALTO', 'VILLA COPACABANA', 'AV ILLIMANI');
+
 create table if not exists domicilio(
 	id_domicilio int primary key references direccion(id_direccion), 
-	nro_puerta mediumint,
+	nro_puerta int,
     id_persona int,
     constraint fk_direccion_domicilio
     foreign key(id_domicilio) references direccion(id_direccion)
@@ -86,17 +88,18 @@ create table if not exists establecimiento(
     foreign key(id_establecimiento) references direccion(id_direccion)
 );
 
+insert into establecimiento(id_establecimiento, nombre) value(2, 'COPACABANA');
+
 create table if not exists atencion(
 	id_atencion bigint primary key auto_increment not null,
     id_usuario int not null,
     id_persona int not null,
     id_establecimiento int not null,
     fecha_atencion datetime,
+    
     foreign key(id_usuario) references usuario(id_usuario),
     
-	constraint fk_persona_atencion
-	foreign key(id_persona) references persona(id_persona)
-	on delete cascade,
+	foreign key(id_persona) references persona(id_persona),
     
 	foreign key(id_establecimiento) references establecimiento(id_establecimiento)
 );
@@ -124,8 +127,6 @@ values("miperfil.jpg", "ESTUDIANTE", "ADMINISTRACION", "2024-08-01", 1);
 insert into personal(perfil, profesion, area_trabajo, fecha_ingreso, id_persona)
 values("miperfil.jpg", "FARMACEUTICA", "FARMACIA", "2021-08-10", 12);
 
-insert into rol(nombre) values('ADMINISTRADOR'),('DIRECTOR'),('PERSONAL');
-
 #prueba para insertar una direccion y un domicilio por medio de la herencia en sql
 insert into direccion(departamento, municipio, zona, av_calle)
 values('LA PAZ', 'EL ALTO', 'NUEVOS HORIZONTES I', 'D-3');
@@ -137,7 +138,6 @@ SELECT * FROM domicilio WHERE id_persona = 2;
 
 #SELECT DE TODAS LAS ENTIDADES
 select * from persona;
-select * from personal;
 select * from usuario;
 select * from rol;
 select * from direccion;
