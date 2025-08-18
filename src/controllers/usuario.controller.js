@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import jwt from 'jsonwebtoken';
 import { JWT_TOKEN } from "../config.js";
 import { rolModel } from "../models/rol.model.js";
-import { establecimientoModel } from "../models/establecimiento.model.js";
+/* import { establecimientoModel } from "../models/establecimiento.model.js"; */
 import { logsModel } from "../models/logs.js";
 
 import fs from 'node:fs'
@@ -12,12 +12,12 @@ const inicioSesion =  async(req, res)=>{
     try {
         /* Se verifica que no haya un campo vacio en los siguientes atributos */
         const {correo, clave, id_establecimiento} = req.body;
-        console.log(typeof(correo), typeof(id_establecimiento), typeof(clave))
         if(!correo || !clave || !id_establecimiento){
             return res.status(404).json({ok:false, msg:"Existen campos sin llenar", correo: false, clave: false})
         }
         /* Para la verificacion de la existencia del establecimiento */
         const establecimiento = await establecimientoModel.verificarEstablecimiento(id_establecimiento);
+        
         /* Siempre habran los CS ya que lo cargamos en el front desde el back pero no esta demas hacer esta validacion */
         if(establecimiento.length<=0){
             return res.status(404).json({ok:false, msg:"El establecimiento no existe", correo: false, clave: false})
@@ -27,11 +27,9 @@ const inicioSesion =  async(req, res)=>{
         const usuario = await usuarioModel.correoUsuario(correo);
 
         /* Si usuario.length es 0 entonces no existe usuarios con ese correo, nota: es un array de objetos asi que pueden ser más */
-        
         if(usuario.length<=0){
-            return res.status(404).json({ ok:false, msg:`Correo no encontrado`, correo: false, clave: true })
+            return res.status(404).json({ ok:false, msg:`¡Correo no encontrado!`, correo: false, clave: true })
         }
-        console.log("my user",usuario)
         /* Como es un array de objetos, pero como solo puede haber un correo, igual debemos apuntar a la posicion cero usuario[0] */
         const isMatch = await bcrypt.compare(clave, usuario[0].clave)
         
@@ -65,21 +63,6 @@ const guardarImagen = (archivo)=>{
     fs.renameSync(archivo.path, newPath);
     return newName;
 }
-
-/* const registroUsuario = async(req, res)=>{
-    try {
-        const { nombre_usuario, correo, clave, id_persona, id_rol }= req.body;
-    const perfil = req.file;
-    guardarImagen(perfil);
-    console.log('mi perfil 2: ', perfil)
-    console.log('mi body: ',req.body);
-    res.json({ok: "TRUE"});
-    } catch (error) {
-        res.status(400).json({error: "ok"})
-        console.log("mi error: ", error)
-    }
-    
-} */
 
 const registroUsuario = async(req, res) =>{
     const { nombre_usuario, correo, clave, id_persona, id_rol }= req.body;
@@ -123,9 +106,10 @@ const perfil = async(req, res) => {
         /* agregamos el rol de usuario al array de objetos usuario */
         let centro_salud = await establecimientoModel.verificarEstablecimiento(req.id_establecimiento)
         usuario[0]={...usuario[0], 
-                rol: rol[0].nombre, 
-            id_establecimiento: centro_salud[0].id_establecimiento, 
-            nombre_establecimiento: centro_salud[0].nombre
+                    id_rol: usuario[0].id_rol,
+                    rol: rol[0].nombre, 
+                    id_establecimiento: centro_salud[0].id_establecimiento, 
+                     nombre_establecimiento: centro_salud[0].nombre_establecimiento
         }
         console.log("ROL DE usuario", usuario);
         res.json({ok: true, msg: usuario })

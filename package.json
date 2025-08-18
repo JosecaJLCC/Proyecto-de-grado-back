@@ -5,7 +5,8 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "dev": "nodemon src/index.js"
+    "dev": "nodemon src/index.js",
+    "lint": "oxlint"
   },
   "author": "Jose Luis Condori Chambi",
   "license": "ISC",
@@ -19,7 +20,10 @@
     "mysql2": "^3.12.0"
   },
   "devDependencies": {
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
     "morgan": "^1.10.0",
-    "nodemon": "^3.1.9"
+    "nodemon": "^3.1.9",
+    "oxlint": "^1.5.0"
   }
 }

@@ -4,10 +4,12 @@ import { PORT } from './config.js'
 /* middlewares */
 import cors from 'cors'
 /* rutas */
-import rutasPersona from './routes/persona.route.js';
+import rutasPaciente from './routes/paciente.route.js';
 import rutasUsuario from './routes/usuario.route.js';
 import rutasEstablecimiento from './routes/establecimiento.route.js';
 import rutasAtencion from './routes/atencion.route.js'
+import rutasPersona from './routes/persona.route.js'
+import rutasMicrored from './routes/microred.route.js';
 
 const app = express();
 /* middlewares */
@@ -24,10 +26,13 @@ app.use(cors());
 app.use('/uploads', express.static('./src/uploads'));
 
 /* rutas */
-app.use('/api/v1/people', rutasPersona);
-app.use('/api/v1/users', rutasUsuario);
+/* app.use('/api/v1/person', rutasPersona);
+app.use('/api/v1/patient', rutasPaciente);
+app.use('/api/v1/user', rutasUsuario);
 app.use('/api/v1/stablishment', rutasEstablecimiento);
-app.use('/api/v1/attention', rutasAtencion);
+app.use('/api/v1/attention', rutasAtencion); */
+app.use('/api/v1/microred', rutasMicrored);
+app.use('/api/v1/establishment', rutasEstablecimiento);
 /* servidor corriendo */
 app.listen(PORT, () => {
    return console.log(`Servidor escuchando en el puerto ${PORT}`)

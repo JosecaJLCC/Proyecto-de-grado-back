@@ -1,11 +1,13 @@
 import { Router } from 'express';
-import { establecimientoController } from '../controllers/establecimiento.controller.js';
+import { establishmentController } from '../controllers/establecimiento.controller.js';
 import { verificarToken } from '../middlewares/jwt.middleware.js';
 
  
 export const rutas = Router();
 
-rutas.post('/create', establecimientoController.crearEstablecimiento);
-rutas.get('/show', establecimientoController.mostrarEstablecimiento);
+rutas.post('/create', establishmentController.createEstablishment);
+rutas.get('/show', establishmentController.showEstablishment);
+rutas.delete('/delete/:id_establecimiento?', establishmentController.deleteEstablishment);
+rutas.patch('/update/:id_establecimiento?', establishmentController.updateEstablishment);
 
 export default rutas;

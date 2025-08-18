@@ -1,29 +1,29 @@
 /* import { direccionModel } from "../models/direccion.model.js"; */
 import { personaModel } from "../models/persona.model.js";
 import { domicilioModel } from '../models/domicilio.model.js'
+import { pacienteModel } from "../models/paciente.model.js";
 
-export const registrarPersona = async(req, res)=>{
-    console.log(req.body)
+export const registrarPaciente = async(req, res)=>{
     try {
         const {ci, extension, 
             nombre, paterno, materno, 
             nacionalidad, estado_civil, 
             nro_telf, sexo, fecha_nacimiento, 
-            departamento, municipio, zona, av_calle, nro_puerta}=req.body;
+            departamento, municipio, zona, av_calle, nro_puerta} = req.body;
             /* Verificar que los campos no esten vacios */
         if(!ci || !extension ||
             !nombre || !paterno || !materno || 
             !nacionalidad || !estado_civil || 
             !nro_telf || !sexo || !fecha_nacimiento ||
             !departamento || !municipio || !zona || !av_calle || !nro_puerta){
-                return res.status(400).json({ok:false, message:'Faltan datos por llenar'})
+                return res.status(400).json({ok:false, message:'Faltan datos por llenar PACIENTE CONTROLLER'})
             }
 
         /* Verificamos si el ci existe */
         const verificarCI= await personaModel.verificarCI(ci, extension);
         /* console.log("mi verificacion de ci",verificarCI.length) */
         if(verificarCI.length>0){
-            return res.status(400).json({ok:false, message:`Ya existe un registro con el ci ${ci}`})
+            return res.status(400).json({ok:false, message:`Ya existe un registro con el ci ${ci} PACIENTE CONTROLLER`})
         }
         /* Mandamos a personaModel los datos a agregar de una persona */
         const personaResultado = await personaModel.registrarPersona({ci, extension, nombre, paterno,
@@ -34,7 +34,7 @@ export const registrarPersona = async(req, res)=>{
             return res.status(404).json(`No existen personas para agregrar`);
         }
 
-        /* Recuperamos el id de la persona recien agregada */
+        /* Recuperamos el id de la persona recien agregada para agregar su direccion y su entidad paciente */
         let id_persona = personaResultado.insertId;
 
         /* Mandamos los datos de direccion de persona persona para despues agregar datos de domicilio*/
@@ -44,27 +44,33 @@ export const registrarPersona = async(req, res)=>{
         if(direccionResultado.affectedRows<=0){
             return res.status(404).json(`No existen direccion para agregrar`);
         }
+
         /* Recuperamos el id de la direccion para pasar a domicilio como su primary key ya que es herencia de entidades */
         let id_domicilio = direccionResultado.insertId;
-        const domicilioResultado = await domicilioModel.crearDomicilio({id_domicilio, nro_puerta, id_persona})
+        const domicilioResultado = await domicilioModel.crearDomicilio({id_domicilio: id_domicilio, nro_puerta, id_persona: id_persona})
         /* Si resultado.affectedRows es 1 se creo la persona, pero si sale 0 quiere decir que no hay personas registradas */
         if(domicilioResultado.affectedRows<=0){
             return res.status(404).json(`No existen domicilio para agregrar`);
         }
-        res.status(201).json({ok:true, message:"Persona con direccion y domicilio agregada con exito"});
+
+         /* Creamos al paciente */
+        const pacienteResultado = await pacienteModel.registrarPaciente({id_persona: id_persona})
+        if(pacienteResultado.affectedRows<=0){
+            return res.status(404).json(`No existe el paciente para agregar`);
+        }
+
+        res.status(201).json({ok:true, message:"Persona con direccion y domicilio agregada con exito", id_persona:id_persona});
     } catch (error) {
         console.log("Error en Crear Persona", error)
     }
 }
 
-
 export const verificarCI =  async(req, res)=>{
     try {
         const { ci, extension } = req.body;
         const resultado = await personaModel.verificarCI(ci, extension);
-        console.log("controller", resultado)
         if(resultado.length<=0){
-            return res.status(404).json(`No existe la persona con ci ${ci} ${extension}`)
+            return res.status(200).json(`No existe la persona con ci ${ci} ${extension}`)
         }
         res.status(200).json({ok:true, message:`El ci ${ci+" "+extension} ya se encuentra registrado`}) 
     } catch (error) {
@@ -72,11 +78,9 @@ export const verificarCI =  async(req, res)=>{
     }
 }
 
-export const mostrarPersonas = async(req, res) =>{
-    try {
-        
-        const resultado = await personaModel.mostrarPersonas();
-        console.log("controller", resultado)
+export const mostrarPacientes = async(req, res) =>{
+    try {   
+        const resultado = await pacienteModel.mostrarPacientes();
         if(resultado.length<=0){
             return res.status(404).json(`No existen registros`)
         }
@@ -86,7 +90,7 @@ export const mostrarPersonas = async(req, res) =>{
     }
 }
 
-export const mostrarPersonaByCi = async(req, res) => {
+export const mostrarPacienteByCi = async(req, res) => {
     try {
         let ci=req.params.id;
         console.log("my ci", ci)
@@ -117,11 +121,11 @@ export const mostrarPersonaByCi = async(req, res) => {
 } 
 
 
-export const personaController = {
-    registrarPersona,
+export const pacienteController = {
+    registrarPaciente,
     verificarCI,
-    mostrarPersonas,
-    mostrarPersonaByCi,
+    mostrarPacientes,
+    mostrarPacienteByCi,
 }
 
 /* 

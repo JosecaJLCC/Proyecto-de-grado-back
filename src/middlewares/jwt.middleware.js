@@ -20,7 +20,8 @@ export const verificarToken = (req, res, next) => {
         req.id_establecimiento=id_establecimiento;
         next()    
     } catch (error) {
-        res.json({msg: 'error token'})
+        console.log("mi error: ",error)
+        return res.status(401).json({ ok: false, msg: "Token inválido o expirado", error });
     }
 }
 
@@ -29,12 +30,12 @@ const verifyAdmin = (req, res, next)=>{
     if(req.id_rol==1){
         return next();
     }
-    res.status(404).json({ok: false, msg:'Usuario no autorizado'})
+    res.status(403).json({ok: false, msg:'Usuario no autorizado'})
 }
 
 const verifyPrincipal = (req, res, next)=>{
     if(req.id_rol==2){
         return next();
     }
-    res.status(404).json({ok: false, msg:'Usuario no autorizado'})
+    res.status(403).json({ok: false, msg:'Usuario no autorizado'})
 }

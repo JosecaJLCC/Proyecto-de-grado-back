@@ -1,15 +1,15 @@
 import { Router } from 'express';
-import {registrarPersona, verificarCI, mostrarPersonas, mostrarPersonaByCi} from '../controllers/persona.controller.js'
+import {registrarPaciente, verificarCI, mostrarPacientes, mostrarPacienteByCi} from '../controllers/paciente.controller.js'
 import { verificarToken } from '../middlewares/jwt.middleware.js';
 
  
 export const rutas = Router();
 
-rutas.get('/show', mostrarPersonas)
+rutas.get('/show', mostrarPacientes)
 
-rutas.get('/show/:id', mostrarPersonaByCi)
+rutas.get('/show/:id', mostrarPacienteByCi)
 
-rutas.post('/register'/* , verificarToken */ ,registrarPersona)
+rutas.post('/register'/* , verificarToken */ ,registrarPaciente)
 
 rutas.post('/ci'/* ,verificarToken */, verificarCI)
 

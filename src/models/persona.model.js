@@ -2,10 +2,8 @@
 import { pool } from "../database.js";
 
 /* Se crea la funcion para el registro de personas */
-const crearPersona = async({ci, extension, nombre, paterno, materno, nacionalidad, estado_civil, nro_telf, sexo, fecha_nacimiento}) =>{
-        console.log("aqui",ci, extension, 
-            nombre, paterno, materno, 
-            nacionalidad, estado_civil, nro_telf, sexo, fecha_nacimiento)
+const registrarPersona = async({ci, extension, nombre, paterno, materno, nacionalidad, estado_civil, nro_telf, sexo, fecha_nacimiento}) =>{
+
     const query = {
         text: `insert into persona(ci, extension, 
                                 nombre, paterno, materno, 
@@ -21,13 +19,13 @@ const crearPersona = async({ci, extension, nombre, paterno, materno, nacionalida
     return resultado[0];
 }
 
-/* Se creo la funcion para la verificacion de existencia de un ci extension */
+/* Se creo la funcion para la verificacion de existencia de un ci extension antes de un nuevo registro */
 const verificarCI = async(ci, extension) =>{
     const query = {
         text: `select concat(ci, ' ', extension) as cedula from persona where ci = ? and extension = ?;`,
         values: [ci, extension]
     }
-    /* devuelve un array de array [[],[]] si el primero esta vacio pues hacer .length para la validacion */
+    /* devuelve un array de array [[{}],[{}]] si el primero esta vacio pues hacer .length para la validacion */
     const resultado = await pool.query(query.text, query.values);
     /* Se envia el primer array donde se mandan los valores ci, extension si fueron encontrados y si no, envia un array vacio */
     return resultado[0];
@@ -56,7 +54,7 @@ const mostrarPersonaByCi= async(ci) => {
 }
 
 export const personaModel = {
-    crearPersona,
+    registrarPersona,
     verificarCI,
     mostrarPersonas,
     mostrarPersonaByCi

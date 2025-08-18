@@ -2,7 +2,7 @@ create database cs_copacabana;
 use cs_copacabana;
 
 create table if not exists persona(
-	id_persona int auto_increment not null,
+	id_persona int auto_increment primary key not null,
     ci varchar(20) not null,
     extension char(5) not null,
     nombre varchar(50) not null,
@@ -13,7 +13,7 @@ create table if not exists persona(
     nro_telf char(10) not null,
     sexo enum('MASCULINO', 'FEMENINO', 'OTRO') not null,
     fecha_nacimiento date not null,
-    primary key(id_persona)
+	persona_estado tinyint not null
 );
 
 create table if not exists rol(
@@ -33,7 +33,9 @@ create table if not exists usuario(
     perfil varchar(255),
     id_rol int,
     id_persona int,
-    foreign key (id_persona) references persona(id_persona),
+    usuario_estado tinyint not null,
+    constraint fk_persona_usuario
+    foreign key (id_persona) references persona(id_persona) on delete cascade,
     foreign key (id_rol) references rol(id_rol),
     primary key(id_usuario)
 );
@@ -60,47 +62,57 @@ create table if not exists historial(
 );
 
 create table if not exists direccion(
-	id_direccion int auto_increment not null,
+	id_direccion int auto_increment primary key not null,
     departamento varchar(20) not null,
     municipio varchar(20) not null,
     zona varchar(50) not null,
-    av_calle varchar(50) not null,
-    primary key (id_direccion)
+    av_calle varchar(50) not null
 );
 
-insert into direccion(departamento, municipio, zona, av_calle) values('LA PAZ', 'EL ALTO', 'VILLA COPACABANA', 'AV ILLIMANI');
-
 create table if not exists domicilio(
-	id_domicilio int primary key references direccion(id_direccion), 
+	id_domicilio int primary key, 
 	nro_puerta int,
     id_persona int,
-    constraint fk_direccion_domicilio
-    foreign key(id_domicilio) references direccion(id_direccion)
-    on delete cascade,
-    constraint fk_persona_domicilio
-	foreign key(id_persona) references persona(id_persona)
-	on delete cascade
+    constraint fk_domicilio_direccion
+		foreign key(id_domicilio) references direccion(id_direccion)
+		on delete cascade,
+    constraint fk_domicilio_persona
+		foreign key(id_persona) references persona(id_persona)
+		on delete cascade
+);
+
+create table if not exists microred(
+	id_microred int auto_increment primary key,
+    nombre_microred varchar(50) not null,
+    red varchar(50) not null,
+    estado_microred TINYINT NOT NULL DEFAULT 1
 );
 
 create table if not exists establecimiento(
-	id_establecimiento int primary key references direccion(id_direccion),
-    nombre varchar(50) not null,
-    foreign key(id_establecimiento) references direccion(id_direccion)
+	id_establecimiento int primary key,
+    nombre_establecimiento varchar(50) not null,
+    estado_establecimiento TINYINT NOT NULL DEFAULT 1,
+    tipo_establecimiento VARCHAR(50) not null,
+    codigo_establecimiento int not null,
+    id_microred int,
+    constraint fk_establecimiento_direccion
+        foreign key (id_establecimiento) references direccion(id_direccion)
+        on delete cascade,
+	constraint fk_establecimiento_microred
+        foreign key (id_microred) references microred(id_microred)
+        on delete cascade
 );
 
-insert into establecimiento(id_establecimiento, nombre) value(2, 'COPACABANA');
+#insert into establecimiento(id_establecimiento, nombre) value(2, 'COPACABANA');
 
 create table if not exists atencion(
 	id_atencion bigint primary key auto_increment not null,
     id_usuario int not null,
-    id_persona int not null,
+    id_paciente int not null,
     id_establecimiento int not null,
     fecha_atencion datetime,
-    
     foreign key(id_usuario) references usuario(id_usuario),
-    
-	foreign key(id_persona) references persona(id_persona),
-    
+	foreign key(id_paciente) references paciente(id_paciente),
 	foreign key(id_establecimiento) references establecimiento(id_establecimiento)
 );
 
@@ -113,29 +125,6 @@ create table if not exists registro_log(
 	foreign key(id_establecimiento) references establecimiento(id_establecimiento)
 );
 
-# USUARIO ADMINISTRADOR
-insert into persona(ci, extension, nombre, paterno, materno, nacionalidad, estado_civil, nro_telf, sexo, fecha_nacimiento)
-values("12796720", "LP", "JOSE LUIS", "CONDORI", "CHAMBI", "BOLIVIANA", "SOLTERO", "73047440", "MASCULINO", "2000-03-12");
-# USUARIO PERSONAL
-insert into persona(ci, extension, nombre, paterno, materno, nacionalidad, estado_civil, nro_telf, sexo, fecha_nacimiento)
-values("2079895", "LP", "VICENTA", "CHAMBI", "CHAMBI", "BOLIVIANA", "SOLTERO", "67060014", "FEMENINO", "1959-04-05");
-
-# USUARIO ADMINISTRADOR
-insert into personal(perfil, profesion, area_trabajo, fecha_ingreso, id_persona)
-values("miperfil.jpg", "ESTUDIANTE", "ADMINISTRACION", "2024-08-01", 1);
-# USUARIO PERSONAL
-insert into personal(perfil, profesion, area_trabajo, fecha_ingreso, id_persona)
-values("miperfil.jpg", "FARMACEUTICA", "FARMACIA", "2021-08-10", 12);
-
-#prueba para insertar una direccion y un domicilio por medio de la herencia en sql
-insert into direccion(departamento, municipio, zona, av_calle)
-values('LA PAZ', 'EL ALTO', 'NUEVOS HORIZONTES I', 'D-3');
-insert into domicilio(id_domicilio, nro_puerta, id_persona)
-values(1, 763, 1);
-
-SHOW CREATE TABLE domicilio;
-SELECT * FROM domicilio WHERE id_persona = 2;
-
 #SELECT DE TODAS LAS ENTIDADES
 select * from persona;
 select * from usuario;
@@ -145,6 +134,40 @@ select * from domicilio;
 select * from establecimiento;
 select * from registro_log;
 select * from atencion;
+select * from paciente;
+select * from microred;
+update microred 
+                    set estado_microred=1
+                    where id_microred=6;
+
+# sentencia oficial para mostrar a los pacientes en la tabla de registrados 
+select (select concat(xpe.ci, " ", xpe.extension)
+		from persona xpe
+		where xpa.id_persona=xpe.id_persona) as ci,
+        
+        (select xpe.nombre
+		from persona xpe
+		where xpa.id_persona=xpe.id_persona) as nombre,
+        
+        (select xpe.nombre
+		from persona xpe
+		where xpa.id_persona=xpe.id_persona) as paterno,
+
+		(select xpe.nombre
+		from persona xpe
+		where xpa.id_persona=xpe.id_persona) as materno, 
+        xpa.id_persona
+from paciente xpa;
+                        
+#Para mostrar los datos de los centros de salud(establecimiento)
+select xe.id_establecimiento, (select xd.zona
+		from  direccion xd
+		where xd.id_direccion = xe.id_establecimiento) as zona,
+        (select xd.av_calle
+		from  direccion xd
+		where xd.id_direccion = xe.id_establecimiento) as av_calle,
+		xe.nombre 
+        from establecimiento xe;
 
 select concat(ci, ' ', extension) as cedula from persona where ci = '12796720' and extension = 'LP';
 
@@ -155,7 +178,7 @@ select *
 from registro_log 
 where date(fecha_log) = date(now());
 
-delete from persona where id_persona=12;
+delete from microred where id_microred=1;
 
 use cs_copacabana;
 
