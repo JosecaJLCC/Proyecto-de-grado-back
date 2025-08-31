@@ -1,14 +1,14 @@
-import { usuarioModel } from "../models/usuario.model.js";
+import { userModel } from "../models/usuario.model.js";
 import bcrypt from "bcryptjs";
 import jwt from 'jsonwebtoken';
 import { JWT_TOKEN } from "../config.js";
-import { rolModel } from "../models/rol.model.js";
+/* import { rolModel } from "../models/rol_usuario.model.js"; */
 /* import { establecimientoModel } from "../models/establecimiento.model.js"; */
-import { logsModel } from "../models/logs.js";
+import { logsModel } from "../models/logs.model.js";
 
 import fs from 'node:fs'
 
-const inicioSesion =  async(req, res)=>{
+const login =  async(req, res)=>{
     try {
         /* Se verifica que no haya un campo vacio en los siguientes atributos */
         const {correo, clave, id_establecimiento} = req.body;
@@ -57,47 +57,57 @@ const inicioSesion =  async(req, res)=>{
     }
 }
 /* cambiar de nombre al archivo imagen de perfil */
-const guardarImagen = (archivo)=>{
+const savePicture = (archivo)=>{
     const newName = `${Date.now()}-${archivo.originalname}`
     const newPath = `./src/uploads/${newName}`;
     fs.renameSync(archivo.path, newPath);
     return newName;
 }
 
-const registroUsuario = async(req, res) =>{
-    const { nombre_usuario, correo, clave, id_persona, id_rol }= req.body;
+const createUser = async(req, res) =>{
+    const { nombre_usuario, correo, clave, id_personal, id_rol }= req.body;
     let nombreArchivo = ""
     if(req.file){
         const perfil = req.file;
-        nombreArchivo = guardarImagen(perfil);
+        nombreArchivo = savePicture(perfil);
     }
     else{
         nombreArchivo = 'usuario.png'
     } 
     try {
         /* Se verifica que no haya un campo vacio en los siguientes atributos */
-        if(!nombre_usuario || !correo || !clave || !id_persona || !id_rol){
+        if(!nombre_usuario || !correo || !clave || !id_personal || !id_rol){
             return res.status(400).json("datos incompletos para agregar")
         }
-        const usuario = await usuarioModel.correoUsuario(correo);
         /* Si no existe ningun correo devuelve [] pero esto es true, es por eso que se hace el .length>0 por si encuentra algun correo registrado */
-        if(usuario.length>0){   
-            return res.status(404).json({ ok:false, msg:`El correo ya existe` })
+        const userByCorreo = await userModel.showUserByCorreo({correo});
+        if(userByCorreo.length>0){   
+            return res.status(400).json({ ok:false, msg:`El correo ya existe` })
+        }
+
+        const userByUsername = await userModel.showUserByUsername({nombre_usuario})
+        if(userByUsername.length>0){   
+            return res.status(400).json({ ok:false, msg:`El nombre de usuario ya existe` })
         }
 
         /* Para la encriptacion de contrasenias con palabras aleatorias */
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(clave, salt)
 
-        const resultado =await usuarioModel.registrarUsuario({ nombre_usuario, correo, clave: hashedPassword, perfil:nombreArchivo, id_persona, id_rol })
-        res.json({ ok:true, msg: resultado/* , token: token */})
+        const result = await userModel.createUser({ nombre_usuario, correo, clave: hashedPassword, perfil:nombreArchivo, id_personal, id_rol })
+        res.status(201).json({ok:true, data:result ,message:"Usuario agregado con exito"});
     } catch (error) {
-        console.log(error)
-        res.status(500).json({ok:false, msg:"error server register"})
+        if (error.source === 'model') {
+            console.log('Error del modelo:', error.message);
+            res.status(500).json({ ok: false, message: 'Error en la base de datos: ' + error.message });
+        } else {
+            console.log('Error del controller:', error.message);
+            res.status(500).json({ ok: false, message: 'Error del servidor: ' + error.message });
+        }
     }
 }
 
-const perfil = async(req, res) => {
+const profile = async(req, res) => {
     try {
         /* Como en el middleware jwt puse correo en el req.correo=correo entonces eso se enviara aqui como req.correo */
         const usuario = await usuarioModel.correoUsuario(req.correo);
@@ -119,8 +129,8 @@ const perfil = async(req, res) => {
     }
 }
 
-export const usuarioController={
-    inicioSesion,
-    registroUsuario, 
-    perfil
+export const userController={
+    login,
+    createUser, 
+    profile
 }

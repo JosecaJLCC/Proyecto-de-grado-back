@@ -3,7 +3,7 @@ import { pool } from "../database.js";
 
 const createEstablishment = async({ departamento, municipio, zona, av_calle, 
                                 nombre_establecimiento, tipo_establecimiento, 
-                                codigo_establecimiento, id_microred }) => {
+                                codigo_establecimiento, fecha_creacion, id_microred }) => {
     let connection;
     try {
         // Obtener conexión
@@ -18,8 +18,8 @@ const createEstablishment = async({ departamento, municipio, zona, av_calle,
         let id_establecimiento = direction.insertId;
 
         const [establishment] = await connection.query(
-            `INSERT INTO establecimiento (id_establecimiento, nombre_establecimiento, tipo_establecimiento, codigo_establecimiento, id_microred) VALUES (?, ?, ?, ?, ?)`, 
-            [id_establecimiento, nombre_establecimiento, tipo_establecimiento, codigo_establecimiento, id_microred])
+            `INSERT INTO establecimiento (id_establecimiento, nombre_establecimiento, tipo_establecimiento, codigo_establecimiento, fecha_creacion, id_microred) VALUES (?, ?, ?, ?, ?, ?)`, 
+            [id_establecimiento, nombre_establecimiento, tipo_establecimiento, codigo_establecimiento, fecha_creacion, id_microred])
 
         // Confirmar si todo salió bien
         await connection.commit();
@@ -42,8 +42,8 @@ const showEstablishment = async() =>{
         connection = await pool.getConnection();
         const query = {
         text: `select xm.nombre_microred, xm.red, xe.id_establecimiento, xe.estado_establecimiento,
-                xe.nombre_establecimiento, xe.tipo_establecimiento, xe.codigo_establecimiento,
-                xd.zona, xd.av_calle, xd.id_direccion
+                xe.nombre_establecimiento, xe.tipo_establecimiento, xe.codigo_establecimiento, xe.fecha_creacion,
+                xd.departamento, xd.municipio, xd.zona, xd.av_calle, xd.id_direccion
                 from microred xm, establecimiento xe, direccion xd
                 where xe.id_microred = xm.id_microred and xe.id_establecimiento = xd.id_direccion and xe.estado_establecimiento=1;`
         }
@@ -63,7 +63,8 @@ const verifyIfExistEstablishment = async({codigo_establecimiento}) =>{
     try {
         connection = await pool.getConnection()
         const query = {
-            text: `select * from establecimiento where codigo_establecimiento=? and estado_establecimiento = 1;`,
+            text: `select * from establecimiento 
+                where codigo_establecimiento=? and estado_establecimiento=1;`,
             values: [codigo_establecimiento]
         }
 
@@ -83,7 +84,8 @@ const verifyIfExistedEstablishment = async({codigo_establecimiento}) =>{
     try {
         connection = await pool.getConnection()
         const query = {
-            text: `select * from establecimiento where codigo_establecimiento=? and estado_establecimiento=0;`,
+            text: `select * from establecimiento 
+                where codigo_establecimiento=? and estado_establecimiento=0;`,
             values: [codigo_establecimiento]
         }
 

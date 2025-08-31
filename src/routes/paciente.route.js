@@ -1,19 +1,15 @@
 import { Router } from 'express';
-import {registrarPaciente, verificarCI, mostrarPacientes, mostrarPacienteByCi} from '../controllers/paciente.controller.js'
+import {patientController} from '../controllers/paciente.controller.js'
 import { verificarToken } from '../middlewares/jwt.middleware.js';
 
  
 export const rutas = Router();
+rutas.post('/create'/* , verificarToken */ ,patientController.createPatient)
+rutas.get('/show', patientController.showPatient)
+rutas.patch('/update/:id_paciente?', patientController.updatePatient)
+rutas.delete('/delete/:id_paciente?'/* ,verificarToken */, patientController.deletePatient)
 
-rutas.get('/show', mostrarPacientes)
-
-rutas.get('/show/:id', mostrarPacienteByCi)
-
-rutas.post('/register'/* , verificarToken */ ,registrarPaciente)
-
-rutas.post('/ci'/* ,verificarToken */, verificarCI)
-
-/* rutas.patch('/personas/:id', putDataById)
+/* rutas.patdeletePatient('/personas/:id', putDataById)
 
 rutas.delete('/personas/:id', deleteDataById)
  */

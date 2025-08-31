@@ -1,15 +1,15 @@
 /* Se importa la configuracion de la conexion con la base de datos */
 import { pool } from "../database.js";
 
-const createMicroRed = async({ nombre_microred, red }) => {
+const createMicroRed = async({ nombre_microred, red, fecha_creacion, id_director }) => {
     let connection;
     try {
         // Obtener conexión
         connection = await pool.getConnection();
 
         const query = {
-            text: `INSERT INTO microred (nombre_microred, red) VALUES (?, ?)`,
-            values: [nombre_microred, red]
+            text: `INSERT INTO microred (nombre_microred, red, fecha_creacion, id_director) VALUES (?, ?, ?, ?)`,
+            values: [nombre_microred, red, fecha_creacion, id_director]
         };
 
         const [result] = await connection.query(query.text, query.values);
@@ -48,7 +48,9 @@ const verifyIfExistMicroRed = async({nombre_microred}) =>{
     try {
         connection = await pool.getConnection()
         const query = {
-            text: `select * from microred where nombre_microred=? and estado_microred = 1;`,
+            text: `select * 
+                from microred 
+                where nombre_microred=? and estado_microred = 1;`,
             values: [nombre_microred]
         }
 
@@ -68,7 +70,9 @@ const verifyIfExistedMicroRed = async({nombre_microred}) =>{
     try {
         connection = await pool.getConnection()
         const query = {
-            text: `select * from microred where nombre_microred=? and estado_microred=0;`,
+            text: `select * 
+                from microred 
+                where nombre_microred=? and estado_microred=0;`,
             values: [nombre_microred]
         }
 
@@ -78,7 +82,6 @@ const verifyIfExistedMicroRed = async({nombre_microred}) =>{
     } catch (error) {
         error.source = 'model';
         throw error;
-
     } finally {
         if (connection) connection.release();
     } 

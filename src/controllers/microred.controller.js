@@ -2,9 +2,9 @@ import { microredModel } from "../models/microred.model.js";
 
 const createMicroRed = async(req, res)=>{
     try {
-        const {nombre_microred, red}=req.body;
+        const {nombre_microred, red, id_director}=req.body;
         /* Verificar que los campos no esten vacios */
-        if(!nombre_microred || !red){
+        if(!nombre_microred || !red || !id_director){
             return res.status(400).json({ok:false, message:'Faltan datos de la microred por llenar'})
         }
         const verifyIfExistMicroRed = await microredModel.verifyIfExistMicroRed({nombre_microred});
@@ -20,10 +20,9 @@ const createMicroRed = async(req, res)=>{
             return res.status(201).json({ok:true, message:"microred reestablecido con exito"});
         }
 
-        const result = await microredModel.createMicroRed({nombre_microred, red})
-        if(result.affectedRows<=0){
-            return res.status(500).json({ok:false, message:`No existen microreds para agregrar`});
-        }
+        const ahora = new Date();
+        const fecha_creacion = ahora.toISOString().slice(0, 19).replace('T', ' ');
+        const result = await microredModel.createMicroRed({nombre_microred, red, fecha_creacion, id_director})
         res.status(201).json({ok:true, data:result ,message:"microred agregada con exito"});
     } catch (error) {
         if (error.source === 'model') {
@@ -92,10 +91,7 @@ export const updateMicroRed = async (req, res) => {
             nombre_microred: nombre_microred || null,
             red: red || null
         });
-
-        if (result.affectedRows <= 0) {
-            return res.status(404).json({ ok: false, message: 'Microred no encontrada para actualizar' });
-        }
+/* no estamos validando cuando se pase un id que no existe */
 
         res.status(200).json({ ok: true, message: 'Microred actualizada correctamente', result });
 

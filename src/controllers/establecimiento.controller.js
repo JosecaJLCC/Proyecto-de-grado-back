@@ -6,8 +6,8 @@ const createEstablishment = async(req, res)=>{
             nombre_establecimiento, tipo_establecimiento, 
             codigo_establecimiento, id_microred } = req.body;
         /* Verificar que los campos no esten vacios */
-        if(!departamento || !municipio || !zona || !av_calle || 
-            !nombre_establecimiento || !tipo_establecimiento || 
+        if(!departamento || !municipio || !zona || !av_calle ||
+            !nombre_establecimiento || !tipo_establecimiento ||
             !codigo_establecimiento || !id_microred){
             return res.status(400).json({ok:false, message:'Faltan datos del establecimiento por llenar'})
         }
@@ -23,13 +23,12 @@ const createEstablishment = async(req, res)=>{
             const updateEstablishment = await establishmentModel.reactivateEstablishment({id_establecimiento:verifyIfExistedEstablishment[0].id_establecimiento})
             return res.status(201).json({ok:true, message:"establecimiento reestablecido con exito"});
         }
-
+        const ahora = new Date();
+        const fecha_creacion = ahora.toISOString().slice(0, 19).replace('T', ' ');
         const result = await establishmentModel.createEstablishment({ departamento, municipio, zona, av_calle, 
                                                                     nombre_establecimiento, tipo_establecimiento, 
-                                                                    codigo_establecimiento, id_microred })
-        if(result.affectedRows<=0){
-            return res.status(500).json({ok:false, message:`No existen Establecimientos para agregrar`});
-        }
+                                                                    codigo_establecimiento, fecha_creacion, id_microred })
+
         res.status(201).json({ok:true, data:result ,message:"establecimiento agregado con exito"});
     } catch (error) {
         if (error.source === 'model') {
@@ -107,13 +106,9 @@ export const updateEstablishment = async (req, res) => {
             zona: zona || null,
             av_calle: av_calle || null
         });
-
-        if (result.affectedRows <= 0) {
-            return res.status(404).json({ ok: false, message: 'Establecimiento no encontrado para actualizar' });
-        }
+        /* no estamos validando cuando se pase un id que no existe */
 
         res.status(200).json({ ok: true, message: 'Establecimiento actualizado correctamente', data: result });
-
     } catch (error) {
         if (error.source === 'model') {
             console.log('Error del modelo:', error.message);

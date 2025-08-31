@@ -1,5 +1,5 @@
 /* import { direccionModel } from "../models/direccion.model.js"; */
-import { personaModel } from "../models/persona.model.js";
+/* import { personaModel } from "../models/persona.model.js"; */
 import { domicilioModel } from '../models/domicilio.model.js'
 
 export const registrarPersona = async(req, res)=>{
