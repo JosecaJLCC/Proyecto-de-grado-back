@@ -4,19 +4,18 @@ const createEstablishment = async(req, res)=>{
     try {
         const { departamento, municipio, zona, av_calle, 
             nombre_establecimiento, tipo_establecimiento, 
-            codigo_establecimiento, id_microred } = req.body;
+         id_microred } = req.body;
         /* Verificar que los campos no esten vacios */
         if(!departamento || !municipio || !zona || !av_calle ||
-            !nombre_establecimiento || !tipo_establecimiento ||
-            !codigo_establecimiento || !id_microred){
+            !nombre_establecimiento || !tipo_establecimiento || !id_microred){
             return res.status(400).json({ok:false, message:'Faltan datos del establecimiento por llenar'})
         }
-        const verifyIfExistEstablishment = await establishmentModel.verifyIfExistEstablishment({codigo_establecimiento});
+        const verifyIfExistEstablishment = await establishmentModel.verifyIfExistEstablishment({nombre_establecimiento});
         if(verifyIfExistEstablishment.length>0){
             return res.status(400).json({ok:false, message:'Ya existe un registro con el codigo del establecimiento'})
         }
 
-        const verifyIfExistedEstablishment = await establishmentModel.verifyIfExistedEstablishment({codigo_establecimiento});
+        const verifyIfExistedEstablishment = await establishmentModel.verifyIfExistedEstablishment({nombre_establecimiento});
         
         if(verifyIfExistedEstablishment.length>0){
             console.log("mi verificacion",verifyIfExistedEstablishment[0].id_establecimiento)
@@ -27,7 +26,7 @@ const createEstablishment = async(req, res)=>{
         const fecha_creacion = ahora.toISOString().slice(0, 19).replace('T', ' ');
         const result = await establishmentModel.createEstablishment({ departamento, municipio, zona, av_calle, 
                                                                     nombre_establecimiento, tipo_establecimiento, 
-                                                                    codigo_establecimiento, fecha_creacion, id_microred })
+                                                                 fecha_creacion, id_microred })
 
         res.status(201).json({ok:true, data:result ,message:"establecimiento agregado con exito"});
     } catch (error) {
@@ -85,7 +84,7 @@ const deleteEstablishment = async(req, res)=>{
 export const updateEstablishment = async (req, res) => {
     try {
         const { id_establecimiento } = req.params;
-        const { departamento, municipio, zona, av_calle, nombre_establecimiento, tipo_establecimiento, codigo_establecimiento, id_microred } = req.body;
+        const { departamento, municipio, zona, av_calle, nombre_establecimiento, tipo_establecimiento, id_microred } = req.body;
 
                                 
         // Validación mínima
@@ -99,7 +98,6 @@ export const updateEstablishment = async (req, res) => {
             id_establecimiento,
             nombre_establecimiento: nombre_establecimiento || null,
             tipo_establecimiento: tipo_establecimiento || null,
-            codigo_establecimiento: codigo_establecimiento || null,
             id_microred: id_microred || null,
             departamento: departamento || null,
             municipio: municipio || null,

@@ -18,7 +18,6 @@ const savePicture = (archivo)=>{
 
 const createUser = async(req, res) =>{
     const { correo, clave, id_personal, id_rol }= req.body;
-    
     try {
         /* Se verifica que no haya un campo vacio en los siguientes atributos */
         if(!correo || !clave || !id_personal || !id_rol){

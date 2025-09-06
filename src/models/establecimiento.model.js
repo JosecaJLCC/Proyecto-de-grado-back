@@ -3,7 +3,7 @@ import { pool } from "../database.js";
 
 const createEstablishment = async({ departamento, municipio, zona, av_calle, 
                                 nombre_establecimiento, tipo_establecimiento, 
-                                codigo_establecimiento, fecha_creacion, id_microred }) => {
+                                fecha_creacion, id_microred }) => {
     let connection;
     try {
         // Obtener conexión
@@ -18,8 +18,8 @@ const createEstablishment = async({ departamento, municipio, zona, av_calle,
         let id_establecimiento = direction.insertId;
 
         const [establishment] = await connection.query(
-            `INSERT INTO establecimiento (id_establecimiento, nombre_establecimiento, tipo_establecimiento, codigo_establecimiento, fecha_creacion, id_microred) VALUES (?, ?, ?, ?, ?, ?)`, 
-            [id_establecimiento, nombre_establecimiento, tipo_establecimiento, codigo_establecimiento, fecha_creacion, id_microred])
+            `INSERT INTO establecimiento (id_establecimiento, nombre_establecimiento, tipo_establecimiento, fecha_creacion, id_microred) VALUES (?, ?, ?, ?, ?)`, 
+            [id_establecimiento, nombre_establecimiento, tipo_establecimiento, fecha_creacion, id_microred])
 
         // Confirmar si todo salió bien
         await connection.commit();
@@ -42,7 +42,7 @@ const showEstablishment = async() =>{
         connection = await pool.getConnection();
         const query = {
         text: `select xm.nombre_microred, xm.red, xe.id_establecimiento, xe.estado_establecimiento,
-                xe.nombre_establecimiento, xe.tipo_establecimiento, xe.codigo_establecimiento, xe.fecha_creacion,
+                xe.nombre_establecimiento, xe.tipo_establecimiento, xe.fecha_creacion,
                 xd.departamento, xd.municipio, xd.zona, xd.av_calle, xd.id_direccion
                 from microred xm, establecimiento xe, direccion xd
                 where xe.id_microred = xm.id_microred and xe.id_establecimiento = xd.id_direccion and xe.estado_establecimiento=1;`
@@ -58,14 +58,14 @@ const showEstablishment = async() =>{
     }  
 }
 
-const verifyIfExistEstablishment = async({codigo_establecimiento}) =>{
+const verifyIfExistEstablishment = async({nombre_establecimiento}) =>{
     let connection;
     try {
         connection = await pool.getConnection()
         const query = {
             text: `select * from establecimiento 
-                where codigo_establecimiento=? and estado_establecimiento=1;`,
-            values: [codigo_establecimiento]
+                where nombre_establecimiento=? and estado_establecimiento=1;`,
+            values: [nombre_establecimiento]
         }
 
         const [result] = await connection.query(query.text, query.values);
@@ -79,14 +79,14 @@ const verifyIfExistEstablishment = async({codigo_establecimiento}) =>{
     } 
 }
 
-const verifyIfExistedEstablishment = async({codigo_establecimiento}) =>{
+const verifyIfExistedEstablishment = async({nombre_establecimiento}) =>{
     let connection;
     try {
         connection = await pool.getConnection()
         const query = {
             text: `select * from establecimiento 
-                where codigo_establecimiento=? and estado_establecimiento=0;`,
-            values: [codigo_establecimiento]
+                where nombre_establecimiento=? and estado_establecimiento=0;`,
+            values: [nombre_establecimiento]
         }
 
         const [result] = await connection.query(query.text, query.values);
@@ -106,7 +106,9 @@ export const deleteEstablishment = async({id_establecimiento}) =>{
     try {
         connection = await pool.getConnection();
         const query = {
-            text: 'update establecimiento set estado_establecimiento = 0 where id_establecimiento = ?',
+            text: `update establecimiento 
+            set estado_establecimiento = 0 
+            where id_establecimiento = ?`,
             values:[id_establecimiento]
         }
         const [result] = await connection.query(query.text, query.values)  
@@ -120,8 +122,7 @@ export const deleteEstablishment = async({id_establecimiento}) =>{
 }
 
 export const updateEstablishment = async({departamento, municipio, zona, av_calle, 
-                                nombre_establecimiento, tipo_establecimiento, 
-                                codigo_establecimiento, id_microred, id_establecimiento})=>{
+                                nombre_establecimiento, tipo_establecimiento, id_microred, id_establecimiento})=>{
     let connection;
     try {
         connection = await pool.getConnection();
@@ -138,10 +139,9 @@ export const updateEstablishment = async({departamento, municipio, zona, av_call
         let [resultEstablishment] = await connection.query(`update establecimiento 
                     set nombre_establecimiento=ifnull(?, nombre_establecimiento),
                     tipo_establecimiento=ifnull(?, tipo_establecimiento),
-                    codigo_establecimiento=ifnull(?, codigo_establecimiento),
                     id_microred = ifnull(?, id_microred)
                     where id_establecimiento=? and estado_establecimiento=1;`,
-                    [nombre_establecimiento, tipo_establecimiento, codigo_establecimiento, id_microred, id_establecimiento ])
+                    [nombre_establecimiento, tipo_establecimiento, id_microred, id_establecimiento ])
         
         connection.commit();
         return {resultEstablishment, resultDirection};
