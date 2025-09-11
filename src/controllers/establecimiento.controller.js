@@ -1,5 +1,5 @@
 import {establishmentModel} from "../models/establecimiento.model.js";
-
+import { fechaBolivia, fechaHoraBolivia } from "../../hora.js";
 const createEstablishment = async(req, res)=>{
     try {
         const { departamento, municipio, zona, av_calle, 
@@ -10,20 +10,24 @@ const createEstablishment = async(req, res)=>{
             !nombre_establecimiento || !tipo_establecimiento || !id_microred){
             return res.status(400).json({ok:false, message:'Faltan datos del establecimiento por llenar'})
         }
+
         const verifyIfExistEstablishment = await establishmentModel.verifyIfExistEstablishment({nombre_establecimiento});
         if(verifyIfExistEstablishment.length>0){
             return res.status(400).json({ok:false, message:'Ya existe un registro con el codigo del establecimiento'})
         }
 
         const verifyIfExistedEstablishment = await establishmentModel.verifyIfExistedEstablishment({nombre_establecimiento});
-        
         if(verifyIfExistedEstablishment.length>0){
             console.log("mi verificacion",verifyIfExistedEstablishment[0].id_establecimiento)
-            const updateEstablishment = await establishmentModel.reactivateEstablishment({id_establecimiento:verifyIfExistedEstablishment[0].id_establecimiento})
+            const updateEstablishment = await establishmentModel.reactivateEstablishment({id_establecimiento:verifyIfExistedEstablishment[0].id_establecimiento,
+                departamento, municipio, zona, av_calle,
+    nombre_establecimiento, tipo_establecimiento, id_microred
+            })
             return res.status(201).json({ok:true, message:"establecimiento reestablecido con exito"});
         }
-        const ahora = new Date();
-        const fecha_creacion = ahora.toISOString().slice(0, 19).replace('T', ' ');
+        
+        const fecha_creacion = fechaHoraBolivia();
+        console.log("mi fecha de creacion: ",fecha_creacion)
         const result = await establishmentModel.createEstablishment({ departamento, municipio, zona, av_calle, 
                                                                     nombre_establecimiento, tipo_establecimiento, 
                                                                  fecha_creacion, id_microred })

@@ -27,7 +27,7 @@ export const verificarToken = (req, res, next) => {
         req.id_personal= id_personal,
         req.id_establecimiento= id_establecimiento,
         req.perfil= perfil,
-        req.nombre_rol=nombre_rol
+        
         next()    
     } catch (error) {
         console.log("mi error: ",error)

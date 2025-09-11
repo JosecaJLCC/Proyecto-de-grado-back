@@ -1,3 +1,4 @@
+import { fechaHoraBolivia } from "../../hora.js";
 import { microredModel } from "../models/microred.model.js";
 
 const createMicroRed = async(req, res)=>{
@@ -26,8 +27,7 @@ const createMicroRed = async(req, res)=>{
             await microredModel.reactivateMicroRed({id_microred:verifyIfExistedMicroRed[0].id_microred, nombre_microred, red, id_director})
             return res.status(201).json({ok:true, message:"microred reestablecido con exito"});
         }
-        const ahora = new Date();
-        const fecha_creacion = ahora.toISOString().slice(0, 19).replace('T', ' ');
+        const fecha_creacion = fechaHoraBolivia();
         const result = await microredModel.createMicroRed({id_microred, nombre_microred, red, fecha_creacion, id_director})
         res.status(201).json({ok:true, data:result ,message:"microred agregada con exito"});
     } catch (error) {
@@ -99,7 +99,6 @@ export const updateMicroRed = async (req, res) => {
             id_director = verifyDirector[0].id_personal;
         }
         
-
         const result = await microredModel.updateMicroRed({
             id_microred,
             nombre_microred: nombre_microred || null,

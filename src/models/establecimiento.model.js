@@ -5,6 +5,7 @@ const createEstablishment = async({ departamento, municipio, zona, av_calle,
                                 nombre_establecimiento, tipo_establecimiento, 
                                 fecha_creacion, id_microred }) => {
     let connection;
+    console.log("mi fecha de creacion model_: ", fecha_creacion)
     try {
         // Obtener conexión
         connection = await pool.getConnection();
@@ -18,7 +19,9 @@ const createEstablishment = async({ departamento, municipio, zona, av_calle,
         let id_establecimiento = direction.insertId;
 
         const [establishment] = await connection.query(
-            `INSERT INTO establecimiento (id_establecimiento, nombre_establecimiento, tipo_establecimiento, fecha_creacion, id_microred) VALUES (?, ?, ?, ?, ?)`, 
+            `INSERT INTO establecimiento 
+            (id_establecimiento, nombre_establecimiento, tipo_establecimiento, fecha_creacion, id_microred) 
+            VALUES (?, ?, ?, ?, ?)`, 
             [id_establecimiento, nombre_establecimiento, tipo_establecimiento, fecha_creacion, id_microred])
 
         // Confirmar si todo salió bien
@@ -41,8 +44,9 @@ const showEstablishment = async() =>{
     try {
         connection = await pool.getConnection();
         const query = {
-        text: `select xm.nombre_microred, xm.red, xe.id_establecimiento, xe.estado_establecimiento,
-                xe.nombre_establecimiento, xe.tipo_establecimiento, xe.fecha_creacion,
+        text: `select xm.nombre_microred, xm.red, xe.id_establecimiento,
+                xe.nombre_establecimiento, xe.tipo_establecimiento, 
+                DATE_FORMAT(xe.fecha_creacion, '%Y-%m-%d %H:%i:%s') AS fecha_creacion,
                 xd.departamento, xd.municipio, xd.zona, xd.av_calle, xd.id_direccion
                 from microred xm, establecimiento xe, direccion xd
                 where xe.id_microred = xm.id_microred and xe.id_establecimiento = xd.id_direccion and xe.estado_establecimiento=1;`
@@ -155,19 +159,28 @@ export const updateEstablishment = async({departamento, municipio, zona, av_call
     } 
 }
 
-export const reactivateEstablishment = async({id_establecimiento})=>{
+export const reactivateEstablishment = async({ departamento, municipio, zona, av_calle,
+    nombre_establecimiento, tipo_establecimiento, id_microred, id_establecimiento})=>{
     let connection;
     try {
         connection = await pool.getConnection();
-         const query = {
-            text: `update establecimiento 
-                    set estado_establecimiento=1
-                    where id_establecimiento=?;`,
-            values:[id_establecimiento]
-        }
-        let [result] = await connection.query(query.text, query.values)
-        console.log("hecho model", result )
-        return result;
+        
+        let [resultEstablishment] = await connection.query( `update establecimiento 
+                    set estado_establecimiento=1,
+                    nombre_establecimiento=ifnull(?, nombre_establecimiento),
+                    tipo_establecimiento=ifnull(?, tipo_establecimiento),
+                    id_microred=ifnull(?, id_microred)
+                    where id_establecimiento=?;`, 
+                    [nombre_establecimiento, tipo_establecimiento, id_microred, id_establecimiento]);
+
+         let [resultDirection] = await connection.query(`update direccion 
+                    set departamento=ifnull(?, departamento),
+                    municipio=ifnull(?, municipio),
+                    zona=ifnull(?, zona),
+                    av_calle=ifnull(?, av_calle)
+                    where id_direccion=?;`,
+                    [departamento, municipio, zona, av_calle, id_establecimiento]);                    
+        return {resultEstablishment, resultDirection};
     } catch (error) {
         error.source = 'model';
         throw error;

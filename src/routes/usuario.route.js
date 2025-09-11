@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { userController } from '../controllers/user.controller.js';
+import { userController } from '../controllers/usuario.controller.js';
 import { verificarToken } from '../middlewares/jwt.middleware.js';
 /* Para utilizar archivos */
 import multer from 'multer'

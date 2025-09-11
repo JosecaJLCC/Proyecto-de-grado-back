@@ -9,6 +9,9 @@ rutas.get('/show', patientController.showPatient)
 rutas.patch('/update/:id_paciente?', patientController.updatePatient)
 rutas.delete('/delete/:id_paciente?'/* ,verificarToken */, patientController.deletePatient)
 
+rutas.post('/create2'/* , verificarToken */ ,patientController.createAttention)
+rutas.get('/show2', patientController.showAttention)
+
 /* rutas.patdeletePatient('/personas/:id', putDataById)
 
 rutas.delete('/personas/:id', deleteDataById)

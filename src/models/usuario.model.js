@@ -13,17 +13,14 @@ const createUser = async({ correo, clave, perfil, fecha_creacion, id_personal, i
         `INSERT INTO usuario (correo, clave, perfil, fecha_creacion, id_personal) 
                     VALUES (?, ?, ?, ?, ?)`, 
         [correo, clave, perfil, fecha_creacion, id_personal])
-
         let id_usuario=user.insertId;
 
         const [rol_user] = await connection.query(
         `INSERT INTO usuario_rol (id_rol, id_usuario, fecha_creacion) 
                     VALUES (?, ?, ?)`, 
         [id_rol, id_usuario, fecha_creacion])
-
         // Confirmar si todo salió bien
         await connection.commit();
-
         return {user, rol_user};
 
     } catch (error) {
@@ -219,7 +216,7 @@ const login = async({correo}) => {
         connection = await pool.getConnection();
         const query = {
             text: `SELECT xu.id_usuario, xu.correo, xu.clave, xu.perfil,
-            xpl.id_personal, xur.id_usuario_rol, xr.nombre, xr.id_rol
+            xpl.id_personal, xur.id_usuario_rol, xr.nombre_rol, xr.id_rol
         FROM usuario xu, personal xpl, usuario_rol xur, rol xr 
 
         WHERE xu.correo = ? and xu.id_personal = xpl.id_personal

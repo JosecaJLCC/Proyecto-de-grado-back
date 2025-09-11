@@ -4,58 +4,10 @@ import jwt from 'jsonwebtoken';
 import { JWT_TOKEN } from "../config.js";
 /* import { rolModel } from "../models/rol_usuario.model.js"; */
 /* import { establecimientoModel } from "../models/establecimiento.model.js"; */
-import { logsModel } from "../models/logs.model.js";
+/* import { logsModel } from "../models/logs.model.js"; */
 
 import fs from 'node:fs'
 
-const login =  async(req, res)=>{
-    try {
-        /* Se verifica que no haya un campo vacio en los siguientes atributos */
-        const {correo, clave, id_establecimiento} = req.body;
-        if(!correo || !clave || !id_establecimiento){
-            return res.status(404).json({ok:false, msg:"Existen campos sin llenar", correo: false, clave: false})
-        }
-        /* Para la verificacion de la existencia del establecimiento */
-        const establecimiento = await establecimientoModel.verificarEstablecimiento(id_establecimiento);
-        
-        /* Siempre habran los CS ya que lo cargamos en el front desde el back pero no esta demas hacer esta validacion */
-        if(establecimiento.length<=0){
-            return res.status(404).json({ok:false, msg:"El establecimiento no existe", correo: false, clave: false})
-        }
-        
-        /* Hallamos el correo del usuario para la auntenticacion nota: es un array de objetos [{},{},...]*/
-        const usuario = await usuarioModel.correoUsuario(correo);
-
-        /* Si usuario.length es 0 entonces no existe usuarios con ese correo, nota: es un array de objetos asi que pueden ser más */
-        if(usuario.length<=0){
-            return res.status(404).json({ ok:false, msg:`¡Correo no encontrado!`, correo: false, clave: true })
-        }
-        /* Como es un array de objetos, pero como solo puede haber un correo, igual debemos apuntar a la posicion cero usuario[0] */
-        const isMatch = await bcrypt.compare(clave, usuario[0].clave)
-        
-        /* isMatch devuelve true si hay coincidencia y false si no lo hay */
-        if(!isMatch){
-            return res.status(404).json({ ok:false, msg:`¡Clave no encontrada!`, correo: true, clave: false })
-        }
-        
-        /* Se envia como parametros en el token el correo y id_rol */
-        const token = jwt.sign({
-            correo: usuario[0].correo,
-            
-            id_rol: usuario[0].id_rol,
-            id_establecimiento: establecimiento[0].id_establecimiento,
-        }, JWT_TOKEN, {expiresIn: '1h'})
-
-        /* Se haran registro de los logs de los usuarios para casos de auditoria */
-        const registroLogs = await logsModel.registrarLogs({id_usuario: usuario[0].id_usuario, id_establecimiento: establecimiento[0].id_establecimiento})
-
-        /* const resultado = await usuarioModel.inicioSesion(correo, clave) */
-        res.json({ ok:true, token:token })
-    } catch (error) {
-        console.log("my error",error)
-        res.status(500).json({ok:false, msg:"error server login"})
-    }
-}
 /* cambiar de nombre al archivo imagen de perfil */
 const savePicture = (archivo)=>{
     const newName = `${Date.now()}-${archivo.originalname}`
@@ -65,18 +17,10 @@ const savePicture = (archivo)=>{
 }
 
 const createUser = async(req, res) =>{
-    const { nombre_usuario, correo, clave, id_personal, id_rol }= req.body;
-    let nombreArchivo = ""
-    if(req.file){
-        const perfil = req.file;
-        nombreArchivo = savePicture(perfil);
-    }
-    else{
-        nombreArchivo = 'usuario.png'
-    } 
+    const { correo, clave, id_personal, id_rol }= req.body;
     try {
         /* Se verifica que no haya un campo vacio en los siguientes atributos */
-        if(!nombre_usuario || !correo || !clave || !id_personal || !id_rol){
+        if(!correo || !clave || !id_personal || !id_rol){
             return res.status(400).json("datos incompletos para agregar")
         }
         /* Si no existe ningun correo devuelve [] pero esto es true, es por eso que se hace el .length>0 por si encuentra algun correo registrado */
@@ -84,17 +28,22 @@ const createUser = async(req, res) =>{
         if(userByCorreo.length>0){   
             return res.status(400).json({ ok:false, msg:`El correo ya existe` })
         }
-
-        const userByUsername = await userModel.showUserByUsername({nombre_usuario})
-        if(userByUsername.length>0){   
-            return res.status(400).json({ ok:false, msg:`El nombre de usuario ya existe` })
+        let nombreArchivo = ""
+        if(req.file){
+            const perfil = req.file;
+            nombreArchivo = savePicture(perfil);
         }
+        else{
+            nombreArchivo = 'usuario.png';
+        } 
 
         /* Para la encriptacion de contrasenias con palabras aleatorias */
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(clave, salt)
 
-        const result = await userModel.createUser({ nombre_usuario, correo, clave: hashedPassword, perfil:nombreArchivo, id_personal, id_rol })
+        const ahora = new Date();
+        const fecha_creacion = ahora.toISOString().slice(0, 19).replace('T', ' ');
+        const result = await userModel.createUser({ correo, clave: hashedPassword, perfil:nombreArchivo, id_personal, id_rol, fecha_creacion })
         res.status(201).json({ok:true, data:result ,message:"Usuario agregado con exito"});
     } catch (error) {
         if (error.source === 'model') {
@@ -107,30 +56,143 @@ const createUser = async(req, res) =>{
     }
 }
 
-const profile = async(req, res) => {
+const showUser = async(req, res)=>{
     try {
-        /* Como en el middleware jwt puse correo en el req.correo=correo entonces eso se enviara aqui como req.correo */
-        const usuario = await usuarioModel.correoUsuario(req.correo);
-        /* se envia el id_rol para devolver el nombre de rol */
-        const rol = await rolModel.mostrarRol(req.id_rol)
-        /* agregamos el rol de usuario al array de objetos usuario */
-        let centro_salud = await establecimientoModel.verificarEstablecimiento(req.id_establecimiento)
-        usuario[0]={...usuario[0], 
-                    id_rol: usuario[0].id_rol,
-                    rol: rol[0].nombre, 
-                    id_establecimiento: centro_salud[0].id_establecimiento, 
-                     nombre_establecimiento: centro_salud[0].nombre_establecimiento
+        const result = await userModel.showUser();
+        if(result.length<=0){
+            return res.status(200).json({ ok: true, data: [], message: 'No existe staff registrado' });
         }
-        console.log("ROL DE usuario", usuario);
-        res.json({ok: true, msg: usuario })
+        res.status(200).json({ok:true, data: result});
+
     } catch (error) {
-        console.log(error)
-        res.status(500).json({ok:false, msg:"error server register"})
+        if (error.source === 'model') {
+            console.log('Error del modelo:', error.message);
+            res.status(500).json({ ok: false, message: 'Error en la base de datos: ' + error.message });
+        } else {
+            console.log('Error del controller:', error.message);
+            res.status(500).json({ ok: false, message: 'Error del servidor: ' + error.message });
+        }
     }
 }
 
-export const userController={
+const login =  async(req, res)=>{
+    try {
+        /* Se verifica que no haya un campo vacio en los siguientes atributos */
+        const {correo, clave} = req.body;
+        if(!correo || !clave){
+            return res.status(404).json({ok:false, msg:"Existen campos sin llenar", correo: false, clave: false})
+        }
+        /* Hallamos el correo del usuario para la auntenticacion */
+        const result = await userModel.login({correo});
+        console.log("result: ", result)
+        /* Si usuario.length es 0 entonces no existe usuarios con ese correo, nota: es un array de objetos asi que pueden ser más */
+        if(result.length<=0){
+            return res.status(400).json({ ok:false, msg:`¡Correo no encontrado!`, correo: false, clave: true })
+        }
+        /* Como es un array de objetos, pero como solo puede haber un correo, igual debemos apuntar a la posicion cero usuario[0] */
+        const isMatch = await bcrypt.compare(clave, result[0].clave)
+        console.log("ismatch",isMatch)
+        /* isMatch devuelve true si hay coincidencia y false si no lo hay */
+        if(!isMatch){
+            return res.status(404).json({ ok:false, msg:`¡Clave no encontrada!`, correo: true, clave: false })
+        }
+ 
+        res.status(200).json({ ok:true, data:result})
+        
+    } catch (error) {
+        if (error.source === 'model') {
+            console.log('Error del modelo login:', error.message);
+            res.status(500).json({ ok: false, message: 'Error en la base de datos: ' + error.message });
+        } else {
+            console.log('Error del controller login:', error.message);
+            res.status(500).json({ ok: false, message: 'Error del servidor: ' + error.message });
+        }
+    }
+}
+
+const setSession = async(req, res) => {
+    const ahora = new Date();
+    const fecha_creacion = ahora.toISOString().slice(0, 19).replace('T', ' ');
+    try {   
+        const {id_usuario_rol, id_usuario, id_personal, id_rol, correo, nombre_rol, id_establecimiento, perfil}=req.body;
+        console.log("mi set:",req.body)
+        if(id_establecimiento){
+            const result = await userModel.setSession({id_usuario_rol, id_establecimiento}) 
+        }
+        /* Se envia como parametros en el token el correo y id_rol */
+        const token = jwt.sign({
+            correo: correo,
+            nombre_rol: nombre_rol,       
+            id_rol: id_rol,
+            id_usuario: id_usuario,
+            id_usuario_rol: id_usuario_rol,
+            id_personal: id_personal,
+            id_establecimiento: id_establecimiento,
+            perfil: perfil
+        }, JWT_TOKEN, {expiresIn: '1h'})
+
+        const registroLogs = await userModel.logLogin({id_usuario_rol, fecha_log:fecha_creacion})
+
+        /* Se haran registro de los logs de los usuarios para casos de auditoria */
+        
+        res.status(200).json({ok: true, token: token})
+    } catch (error) {
+        if (error.source === 'model') {
+            console.log('Error del modelo setsession:', error.message);
+            res.status(500).json({ ok: false, message: 'Error en la base de datos: ' + error.message });
+        } else {
+            console.log('Error del controller setsession:', error.message);
+            res.status(500).json({ ok: false, message: 'Error del servidor: ' + error.message });
+        }
+    }
+}
+
+const profile = async(req, res) => {
+    console.log("mi perfil", req.body)
+    try {
+        let user={
+            correo:req.correo,
+            nombre_rol:req.nombre_rol,
+            perfil: req.perfil,
+            id_usuario: req.id_usuario,
+            id_usuario_rol: req.id_usuario_rol,
+            id_establecimiento: req.id_establecimiento
+        }
+        
+        res.json({ok: true, data: user })
+    } catch (error) {
+        if (error.source === 'model') {
+            console.log('Error del modelo profile:', error.message);
+            res.status(500).json({ ok: false, message: 'Error en la base de datos: ' + error.message });
+        } else {
+            console.log('Error del controller profile:', error.message);
+            res.status(500).json({ ok: false, message: 'Error del servidor: ' + error.message });
+        }
+    }
+}
+
+const chooseEstablishment = async(req, res) => {
+    try {
+        const {id_usuario}=req.params;
+        console.log(id_usuario);
+        const result = await userModel.chooseEstablishment({id_usuario})
+        res.status(200).json({ok: true, data:result})
+    } catch (error) {
+        if (error.source === 'model') {
+            console.log('Error del modelo choose:', error.message);
+            res.status(500).json({ ok: false, message: 'Error en la base de datos: ' + error.message });
+        } else {
+            console.log('Error del controller choose:', error.message);
+            res.status(500).json({ ok: false, message: 'Error del servidor: ' + error.message });
+        }
+    }
+}
+
+export const userController = {
+    createUser,
+    showUser, 
     login,
-    createUser, 
-    profile
+    profile,
+    chooseEstablishment,
+    setSession
 }

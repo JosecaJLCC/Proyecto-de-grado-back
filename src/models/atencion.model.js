@@ -1,15 +1,45 @@
 /* Se importa la configuracion de la conexion con la base de datos */
 import { pool } from "../database.js";
 
-const registrarAtencion = async({id_usuario, id_persona, id_establecimiento}) =>{
-    const query = {
-        text: `insert into atencion(id_usuario, id_persona, id_establecimiento, fecha_atencion) 
-                values(?,?,?,now())`,
-        values: [id_usuario, id_persona, id_establecimiento]
-    }
+const createAttention = async({id_usuario_rol, id_paciente, fecha_atencion}) =>{
+      let connection;
+    try {
+        connection = await pool.getConnection();
+        const query = {
+                text: `insert into atencion(id_usuario_rol, id_paciente, fecha_atencion) 
+                        values(?,?,?)`,
+                values: [id_usuario_rol, id_paciente, fecha_atencion]
+            }
+            const [result] = await connection.query(query.text, query.values);
+            return result;
+    } catch (error) {
+        error.source = 'model';
+        throw error;
+    } finally{
+       if (connection) connection.release();
+    }  
+}
+    
 
-    const resultado = await pool.query(query.text, query.values);
-    return resultado[0];
+const showAttention = async() =>{
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        const query = {
+        text: `select xpa.id_paciente, concat(xpe.ci, " ", xpe.extension) as ci,
+                concat(xpe.paterno," ",xpe.materno," ",xpe.nombre) as nombres,
+                xa.fecha_atencion
+            from persona xpe, paciente xpa, atencion xa 
+            where xpa.id_persona=xpe.id_persona and xpa.id_paciente=xa.id_paciente and xpa.estado_paciente=1;`,
+        }
+        const [result] = await connection.query(query.text);
+        return result;
+    } catch (error) {
+        error.source = 'model';
+        throw error;
+    } finally{
+       if (connection) connection.release();
+    }  
 }
 
 const mostrarAtencion = async()=>{
@@ -53,17 +83,28 @@ const mostrarHistorialAtencion = async()=>{
     return resultado[0];
 }
 
-const verificarAtencion = async(id_persona) =>{
-    const query = {
-        text:`select * from atencion where id_persona = ? and date(fecha_atencion) = date(now()) `,
-        values: [id_persona]
+const verifyAttention = async({id_paciente, fecha_atencion}) =>{
+    let connection;
+    try {
+        connection=await pool.getConnection();
+        const query = {
+            text:`select * from atencion where id_paciente = ? and date(fecha_atencion) = ? `,
+            values: [id_paciente, fecha_atencion]
+        }
+        const [result] = await connection.query(query.text, query.values);
+        return result;
+    } catch (error) {
+        error.source = 'model';
+        throw error;
+    } finally{
+       if (connection) connection.release();
     }
-    const resultado = await pool.query(query.text, query.values);
-    return resultado[0];
+    
 }
-export const atencionModel = {
-    registrarAtencion,
+export const attentionModel = {
+    createAttention,
+    showAttention,
     mostrarAtencion,
     mostrarHistorialAtencion,
-    verificarAtencion,
+    verifyAttention,
 }

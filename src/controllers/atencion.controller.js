@@ -1,5 +1,5 @@
-
-import { atencionModel } from "../models/atencion.model.js";
+import { attentionModel } from "../models/atencion.model.js";
+import { fechaBolivia, fechaHoraBolivia } from "../../hora.js";
 
 const registrarAtencion = async(req, res)=>{
     try {
@@ -48,9 +48,62 @@ const mostrarHistorialAtencion = async(req, res) => {
     }
 }
 
-export const atencionController = {
-    registrarAtencion, 
+const showAttention = async(req, res)=>{
+    try {
+        const result = await attentionModel.showAttention();
+        console.log("my res de show",result)
+        if(result.length<=0){
+            return res.status(200).json({ ok: true, data: [], message: 'No existen pacientes registrados' });
+        }
+        console.log("my res de show2",result)
+        res.status(200).json({ok:true, data: result});
+
+    } catch (error) {
+        if (error.source === 'model') {
+            console.log('Error del modelo:', error.message);
+            res.status(500).json({ ok: false, message: 'Error en la base de datos: ' + error.message });
+        } else {
+            console.log('Error del controller:', error.message);
+            res.status(500).json({ ok: false, message: 'Error del servidor: ' + error.message });
+        }
+    }
+}
+
+const createAttention = async(req, res)=>{
+    try {
+        const {id_paciente, id_usuario_rol}=req.body;
+        console.log("crear atencion: ",req.body)
+        if(!id_usuario_rol || !id_paciente){
+            return res.status(200).json({ok:false, message:'Faltan datos por llenar'})
+        }
+        
+        const fecha_atencion = fechaHoraBolivia();
+        
+        let verifyAttention= await attentionModel.verifyAttention({id_paciente, fecha_atencion:fecha_atencion.split(" ")[0]})
+        console.log("verifyattention", verifyAttention)
+        if(verifyAttention.length>0){
+            return res.status(409).json({ok:false, message:`El paciente ya fue registrado`});
+        }
+        console.log("hizo la verify")
+        const result = await attentionModel.createAttention({ id_usuario_rol, id_paciente, fecha_atencion })
+        res.status(201).json({ok:true, data:result ,message:"Atencion agregado con exito"});
+
+    } catch (error) {
+        if (error.source === 'model') {
+            console.log('Error del modelo:', error.message);
+            res.status(500).json({ ok: false, message: 'Error en la base de datos: ' + error.message });
+        } else {
+            console.log('Error del controller:', error.message);
+            res.status(500).json({ ok: false, message: 'Error del servidor: ' + error.message });
+        }
+    }
+}
+
+export const attentionController = {
+    createAttention,
+    showAttention
+   /*  registrarAtencion, 
     mostrarAtencion,
-    mostrarHistorialAtencion,
+    mostrarHistorialAtencion, */
     
 }

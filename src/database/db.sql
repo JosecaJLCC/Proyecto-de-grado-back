@@ -94,13 +94,13 @@ create table if not exists usuario(
 		foreign key (id_personal) references personal(id_personal) on delete cascade
 );
 
-
+use cs_copacabana;
 create table if not exists rol(
 	id_rol int auto_increment primary key,
-    nombre varchar(50) not null,
-    descripcion text null
+    nombre_rol varchar(50) not null,
+    descripcion_rol text null
 );
-insert into rol(nombre) values('ADMINISTRADOR'),('DIRECTOR'),('PERSONAL');
+insert into rol(nombre_rol) values('ADMINISTRADOR'),('DIRECTOR'),('PERSONAL');
 
 create table if not exists direccion(
 	id_direccion int auto_increment primary key not null,
@@ -147,13 +147,11 @@ create table if not exists usuario_rol(
 
 create table if not exists atencion(
 	id_atencion int primary key auto_increment,
-    id_usuario int not null,
+    id_usuario_rol int not null,
     id_paciente int not null,
-    id_establecimiento int null,
     fecha_atencion datetime not null,
-    foreign key(id_usuario) references usuario(id_usuario),
-	foreign key(id_paciente) references paciente(id_paciente),
-	foreign key(id_establecimiento) references establecimiento(id_establecimiento)
+    foreign key(id_usuario_rol) references usuario_rol(id_usuario_rol),
+	foreign key(id_paciente) references paciente(id_paciente)
 );
 
 create table if not exists registro_log(
@@ -171,8 +169,12 @@ create table if not exists historial(
     constraint fk_paciente_historial
 		foreign key (id_paciente) references paciente(id_paciente) on delete cascade
 );
+select  DATE(CONVERT_TZ(now(), '+00:00', '-04:00'));
+SELECT CONVERT_TZ(NOW(), '+00:00', '-04:00') AS hora_bolivia;
 
 use cs_copacabana;
+select * from atencion;
+select * from rol;
 select * from area_trabajo;
 select * from profesion;
 select * from rol;
@@ -218,3 +220,13 @@ SELECT xu.id_usuario, xu.correo, xu.clave,
 
         WHERE xu.correo = 'joseluisjoswekrick@gmail.com' and xu.id_personal = xpl.id_personal
         AND xu.id_usuario=xur.id_usuario and xur.id_rol=xr.id_rol and xu.estado_usuario = 1;
+        
+select * from usuario;
+select * from usuario_rol;
+insert into usuario_rol(id_usuario, id_rol, fecha_creacion) values(1,1, "2024-05-03");
+
+select xpa.id_paciente, concat(xpe.ci, " ", xpe.extension) as ci,
+                concat(xpe.paterno," ",xpe.materno," ",xpe.nombre) as nombres,
+                xa.fecha_atencion
+            from persona xpe, paciente xpa, atencion xa 
+            where xpa.id_persona=xpe.id_persona and xpa.id_paciente=xa.id_paciente and xpa.estado_paciente=1;

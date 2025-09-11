@@ -3,7 +3,8 @@ import { pool } from "../database.js";
 
 const createPatient = async({ departamento, municipio, zona, av_calle, nro_puerta,
                             ci, extension, nombre, paterno, materno, nacionalidad,
-                            estado_civil, nro_telf, sexo, fecha_nacimiento, fecha_creacion}) => {
+                            estado_civil, nro_telf, sexo, fecha_nacimiento, fecha_creacion,
+                            nombre_carpeta, color, id_microred}) => {
     let connection;
     try {
         // Obtener conexión
@@ -27,14 +28,20 @@ const createPatient = async({ departamento, municipio, zona, av_calle, nro_puert
             `INSERT INTO domicilio (id_domicilio, nro_puerta, id_persona) VALUES (?, ?, ?)`, 
             [id_domicilio, nro_puerta, id_persona])
 
+        const [folder] = await connection.query(
+            `INSERT INTO carpeta (nombre_carpeta, color) VALUES (?, ?)`, 
+            [nombre_carpeta, color])
+        
+        let id_carpeta = folder.insertId;
+
         const [patient] = await connection.query(
-            `INSERT INTO paciente (id_persona, fecha_creacion) VALUES (?, ?)`, 
-            [ id_persona, fecha_creacion])    
+            `INSERT INTO paciente (id_persona, id_carpeta, id_microred, fecha_creacion) VALUES (?, ?, ?, ?)`, 
+            [ id_persona, id_carpeta, id_microred, fecha_creacion ])    
 
         // Confirmar si todo salió bien
         await connection.commit();
 
-        return {person, direction, residence, patient};
+        return {person, direction, residence, patient, folder};
 
     } catch (error) {
         if (connection) await connection.rollback(); // Revierte todo si algo falla
@@ -51,12 +58,46 @@ const showPatient = async() =>{
     try {
         connection = await pool.getConnection();
         const query = {
-        text: `select *
-            from persona xpe, paciente xpa, direccion xdi, domicilio xdo 
+        text: `select xpa.id_paciente, concat(xpe.ci, " ", xpe.extension) as ci,
+                concat(xpe.paterno," ",xpe.materno," ",xpe.nombre) as nombres,
+                xpa.id_microred, xm.nombre_microred
+            from persona xpe, paciente xpa, direccion xdi, domicilio xdo, microred xm 
             where xpa.id_persona=xpe.id_persona and xpe.id_persona=xdo.id_persona
-            and xdo.id_domicilio=xdi.id_direccion and xpa.estado_paciente=1;`,
+            and xdo.id_domicilio=xdi.id_direccion and xpa.id_microred=xm.id_microred and xpa.estado_paciente=1;`,
         }
+        const [result] = await connection.query(query.text);
+        return result;
+    } catch (error) {
+        error.source = 'model';
+        throw error;
+    } finally{
+       if (connection) connection.release();
+    }  
+}
 
+const createAttention = async({id_usuario, id_paciente, id_establecimiento}) =>{
+    const query = {
+        text: `insert into atencion(id_usuario, id_paciente, id_establecimiento, fecha_atencion) 
+                values(?,?,?,now())`,
+        values: [id_usuario, id_paciente, id_establecimiento]
+    }
+
+    const resultado = await pool.query(query.text, query.values);
+    return resultado[0];
+}
+
+const showAttention = async() =>{
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        const query = {
+        text: `select xpa.id_paciente, concat(xpe.ci, " ", xpe.extension) as ci,
+                concat(xpe.paterno," ",xpe.materno," ",xpe.nombre) as nombres,
+                xpa.id_microred, xm.nombre_microred
+            from persona xpe, paciente xpa, direccion xdi, domicilio xdo, microred xm 
+            where xpa.id_persona=xpe.id_persona and xpe.id_persona=xdo.id_persona
+            and xdo.id_domicilio=xdi.id_direccion and xpa.id_microred=xm.id_microred and xpa.estado_paciente=1;`,
+        }
         const [result] = await connection.query(query.text);
         return result;
     } catch (error) {
@@ -240,5 +281,7 @@ export const patientModel = {
     deletePatient,
     verifyIfExistedPatient,
     reactivatePatient,
-    showPatientById
+    showPatientById,
+    createAttention,
+    showAttention
 }

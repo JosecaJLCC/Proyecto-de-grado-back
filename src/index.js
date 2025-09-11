@@ -26,10 +26,9 @@ app.use(cors());
 app.use('/uploads', express.static('./src/uploads'));
 
 /* rutas */
-/* app.use('/api/v1/person', rutasPersona);
+/* app.use('/api/v1/person', rutasPersona); */
 
-app.use('/api/v1/stablishment', rutasEstablecimiento);
-app.use('/api/v1/attention', rutasAtencion); */
+app.use('/api/v1/attention', rutasAtencion);
 app.use('/api/v1/microred', rutasMicrored);
 app.use('/api/v1/establishment', rutasEstablecimiento);
 app.use('/api/v1/patient', rutasPaciente);

@@ -130,3 +130,9 @@
     ```sh
     npm run lint
     ```
+
+### Instalar Day JS para manejar las fechas en zona horaria de Bolivia
+
+    ```sh
+    npm install dayjs --save
+    ```

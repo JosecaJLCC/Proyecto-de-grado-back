@@ -1,32 +1,33 @@
 import {patientModel} from "../models/paciente.model.js";
-
+import { fechaBolivia, fechaHoraBolivia } from "../../hora.js";
 const createPatient = async(req, res)=>{
     try {
         const { departamento, municipio, zona, av_calle, nro_puerta,
                 ci, extension, nombre, paterno, materno, nacionalidad,
-                estado_civil, nro_telf, sexo, fecha_nacimiento} = req.body;
+                estado_civil, nro_telf, sexo, fecha_nacimiento,
+                id_microred, nombre_carpeta, color} = req.body;
         /* Verificar que los campos no esten vacios */
         if(!departamento || !municipio || !zona || !av_calle || !nro_puerta || 
-            !ci || !extension || !nombre || !paterno || !materno || !nacionalidad ||
-            !estado_civil || !nro_telf || !sexo || !fecha_nacimiento){
-            return res.status(400).json({ok:false, message:'Faltan datos del establecimiento por llenar'})
+            !ci || !extension || !nombre || !nacionalidad || !estado_civil || 
+            !nro_telf || !sexo || !fecha_nacimiento || !id_microred || !nombre_carpeta){
+            return res.status(400).json({ok:false, message:'Faltan datos del paciente por llenar'})
         }
         const verifyIfExistPatient = await patientModel.verifyIfExistPatient({ci, extension});
         if(verifyIfExistPatient.length>0){
             return res.status(400).json({ok:false, message:'Ya existe un registro con el ci del paciente'})
         }
-
         const verifyIfExistedPatient = await patientModel.verifyIfExistedPatient({ci, extension});
         if(verifyIfExistedPatient.length>0){
             console.log("mi verificacion",verifyIfExistedPatient[0].id_persona)
             const updatePatient = await patientModel.reactivatePatient({id_paciente:verifyIfExistedPatient[0].id_paciente})
             return res.status(201).json({ok:true, message:"establecimiento reestablecido con exito"});
         }
-        const ahora = new Date();
-        const fecha_creacion = ahora.toISOString().slice(0, 19).replace('T', ' ');
+        
+        const fecha_creacion = fechaHoraBolivia();
         const result = await patientModel.createPatient({ departamento, municipio, zona, av_calle, nro_puerta,
                                                     ci, extension, nombre, paterno, materno, nacionalidad,
-                                                    estado_civil, nro_telf, sexo, fecha_nacimiento, fecha_creacion })
+                                                    estado_civil, nro_telf, sexo, fecha_nacimiento, fecha_creacion,
+                                                    id_microred, nombre_carpeta, color })
         res.status(201).json({ok:true, data:result ,message:"Paciente agregado con exito"});
     } catch (error) {
         if (error.source === 'model') {
@@ -46,6 +47,42 @@ const showPatient = async(req, res)=>{
             return res.status(200).json({ ok: true, data: [], message: 'No existen pacientes registrados' });
         }
         res.status(200).json({ok:true, data: result});
+
+    } catch (error) {
+        if (error.source === 'model') {
+            console.log('Error del modelo:', error.message);
+            res.status(500).json({ ok: false, message: 'Error en la base de datos: ' + error.message });
+        } else {
+            console.log('Error del controller:', error.message);
+            res.status(500).json({ ok: false, message: 'Error del servidor: ' + error.message });
+        }
+    }
+}
+
+const showAttention = async(req, res)=>{
+    try {
+        const result = await patientModel.showAttention();
+        if(result.length<=0){
+            return res.status(200).json({ ok: true, data: [], message: 'No existen pacientes registrados' });
+        }
+        res.status(200).json({ok:true, data: result});
+
+    } catch (error) {
+        if (error.source === 'model') {
+            console.log('Error del modelo:', error.message);
+            res.status(500).json({ ok: false, message: 'Error en la base de datos: ' + error.message });
+        } else {
+            console.log('Error del controller:', error.message);
+            res.status(500).json({ ok: false, message: 'Error del servidor: ' + error.message });
+        }
+    }
+}
+
+const createAttention = async(req, res)=>{
+    try {
+        const {id_paciente, id_usuario}=req.body;
+        const result = await patientModel.createAttention({ id_paciente, id_usuario })
+        res.status(201).json({ok:true, data:result ,message:"Atencion agregado con exito"});
 
     } catch (error) {
         if (error.source === 'model') {
@@ -134,5 +171,7 @@ export const patientController = {
     createPatient, 
     showPatient,
     deletePatient,
-    updatePatient
+    updatePatient,
+    createAttention,
+    showAttention
 }

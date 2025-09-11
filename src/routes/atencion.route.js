@@ -1,13 +1,13 @@
 import { Router } from 'express';
-import { atencionController } from '../controllers/atencion.controller.js';
+import { attentionController } from '../controllers/atencion.controller.js';
 
 import { verificarToken } from '../middlewares/jwt.middleware.js';
 
  
 export const rutas = Router();
 
-rutas.post('/create', atencionController.registrarAtencion);
-rutas.get('/show', atencionController.mostrarAtencion);
-rutas.get('/showall', atencionController.mostrarHistorialAtencion);
+rutas.post('/create', attentionController.createAttention);
+rutas.get('/show', attentionController.showAttention);
+/* rutas.get('/showall', attentionController.mostrarHistorialAtencion); */
 
 export default rutas;

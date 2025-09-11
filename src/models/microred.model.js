@@ -32,7 +32,10 @@ const showMicroRed = async() =>{
         connection = await pool.getConnection();
         const query = {
             /* text: `select * from microred where estado_microred=1`, */
-        text: `select xm.*, concat(xpe.paterno, " ", xpe.materno, " ", xpe.nombre) as nombres, xpe.ci, xpe.extension 
+        text: `select xm.id_microred, xm.nombre_microred, xm.red, xm.id_director,
+            DATE_FORMAT(xm.fecha_creacion, '%Y-%m-%d %H:%i:%s') AS fecha_creacion, 
+            concat(xpe.paterno, " ", xpe.materno, " ", xpe.nombre) as nombres, 
+            xpe.ci, xpe.extension 
             from microred xm, personal xpl, persona xpe 
             where estado_microred = 1 and xm.id_director=xpl.id_personal and xpl.id_persona=xpe.id_persona;`,
         } 
@@ -96,7 +99,9 @@ export const deleteMicroRed = async({id_microred}) =>{
     try {
         connection = await pool.getConnection();
         const query = {
-            text: 'update microred set estado_microred = 0 where id_microred = ?',
+            text: `update microred 
+            set estado_microred = 0
+             where id_microred = ?`,
             values:[id_microred]
         }
         const [result] = await connection.query(query.text, query.values)  
