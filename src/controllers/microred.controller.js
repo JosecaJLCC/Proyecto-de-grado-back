@@ -19,7 +19,7 @@ const createMicroRed = async(req, res)=>{
         if(verifyDirector.length<=0){
             return res.status(200).json({ok:false, message:`No existe ningun personal con el ci: ${ci_director}`})
         }
-        let id_director = verifyDirector[0].id_director;
+        let id_director = verifyDirector[0].id_personal;
         /* Verifica si existio la microred para reactivarla si existio */
         const verifyIfExistedMicroRed = await microredModel.verifyIfExistedMicroRed({id_microred});
         if(verifyIfExistedMicroRed.length>0){
@@ -68,7 +68,7 @@ const deleteMicroRed = async(req, res)=>{
     try {
         const result = await microredModel.deleteMicroRed({id_microred});
         if(result.affectedRows<=0){
-            return res.status(404).json({ ok: false, message: 'Microred no encontrada' });
+            return res.status(200).json({ ok: false, message: 'Microred no encontrada' });
         }
         res.status(200).json({ ok: true, message: 'Microred eliminada correctamente' });
     } catch (error) {

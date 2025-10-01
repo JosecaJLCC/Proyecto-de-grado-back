@@ -49,7 +49,8 @@ const showEstablishment = async() =>{
                 DATE_FORMAT(xe.fecha_creacion, '%Y-%m-%d %H:%i:%s') AS fecha_creacion,
                 xd.departamento, xd.municipio, xd.zona, xd.av_calle, xd.id_direccion
                 from microred xm, establecimiento xe, direccion xd
-                where xe.id_microred = xm.id_microred and xe.id_establecimiento = xd.id_direccion and xe.estado_establecimiento=1;`
+                where xe.id_microred = xm.id_microred and xe.id_establecimiento = xd.id_direccion 
+                and xe.estado_establecimiento=1 and xm.estado_microred=1;`
         }
 
         const [result] = await connection.query(query.text);
@@ -147,7 +148,7 @@ export const updateEstablishment = async({departamento, municipio, zona, av_call
                     where id_establecimiento=? and estado_establecimiento=1;`,
                     [nombre_establecimiento, tipo_establecimiento, id_microred, id_establecimiento ])
         
-        connection.commit();
+        await connection.commit();
         return {resultEstablishment, resultDirection};
     }catch (error) {
         if (connection) await connection.rollback(); // Revierte todo si algo falla

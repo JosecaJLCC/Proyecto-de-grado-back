@@ -8,20 +8,20 @@ const createEstablishment = async(req, res)=>{
         /* Verificar que los campos no esten vacios */
         if(!departamento || !municipio || !zona || !av_calle ||
             !nombre_establecimiento || !tipo_establecimiento || !id_microred){
-            return res.status(400).json({ok:false, message:'Faltan datos del establecimiento por llenar'})
+            return res.status(200).json({ok:false, message:'Faltan datos del establecimiento por llenar'})
         }
 
         const verifyIfExistEstablishment = await establishmentModel.verifyIfExistEstablishment({nombre_establecimiento});
         if(verifyIfExistEstablishment.length>0){
-            return res.status(400).json({ok:false, message:'Ya existe un registro con el codigo del establecimiento'})
+            return res.status(200).json({ok:false, message:'Ya existe un registro con el codigo del establecimiento'})
         }
 
         const verifyIfExistedEstablishment = await establishmentModel.verifyIfExistedEstablishment({nombre_establecimiento});
         if(verifyIfExistedEstablishment.length>0){
             console.log("mi verificacion",verifyIfExistedEstablishment[0].id_establecimiento)
-            const updateEstablishment = await establishmentModel.reactivateEstablishment({id_establecimiento:verifyIfExistedEstablishment[0].id_establecimiento,
-                departamento, municipio, zona, av_calle,
-    nombre_establecimiento, tipo_establecimiento, id_microred
+            await establishmentModel.reactivateEstablishment({id_establecimiento:verifyIfExistedEstablishment[0].id_establecimiento,
+                                                            departamento, municipio, zona, av_calle,
+                                                            nombre_establecimiento, tipo_establecimiento, id_microred
             })
             return res.status(201).json({ok:true, message:"establecimiento reestablecido con exito"});
         }
@@ -66,12 +66,12 @@ const showEstablishment = async(req, res)=>{
 const deleteEstablishment = async(req, res)=>{
     const { id_establecimiento } = req.params;
     if (!id_establecimiento) {
-        return res.status(400).json({ ok: false, message: 'El id de establecimiento es obligatorio' });
+        return res.status(200).json({ ok: false, message: 'El id de establecimiento es obligatorio' });
     }
     try {
         const result = await establishmentModel.deleteEstablishment({id_establecimiento});
         if(result.affectedRows<=0){
-            return res.status(404).json({ ok: false, message: 'Establecimiento no encontrado' });
+            return res.status(200).json({ ok: false, message: 'Establecimiento no encontrado' });
         }
         res.status(200).json({ ok: true, message: 'Establecimiento eliminado correctamente' });
 
@@ -89,15 +89,13 @@ export const updateEstablishment = async (req, res) => {
     try {
         const { id_establecimiento } = req.params;
         const { departamento, municipio, zona, av_calle, nombre_establecimiento, tipo_establecimiento, id_microred } = req.body;
-
+        console.log("update establishment",req.body, req.params)
                                 
         // Validación mínima
         if (!id_establecimiento) {
-            return res.status(400).json({ ok: false, message: 'El id de establecimiento es obligatorio' });
+            return res.status(200).json({ ok: false, message: 'El id de establecimiento es obligatorio' });
         }
-
-        if(id_microred) true;
-
+ console.log("entro")
         const result = await establishmentModel.updateEstablishment({
             id_establecimiento,
             nombre_establecimiento: nombre_establecimiento || null,
@@ -109,7 +107,7 @@ export const updateEstablishment = async (req, res) => {
             av_calle: av_calle || null
         });
         /* no estamos validando cuando se pase un id que no existe */
-
+       
         res.status(200).json({ ok: true, message: 'Establecimiento actualizado correctamente', data: result });
     } catch (error) {
         if (error.source === 'model') {

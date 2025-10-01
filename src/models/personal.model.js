@@ -4,8 +4,8 @@ import { pool } from "../database.js";
 const createStaff = async({ departamento, municipio, zona, av_calle, nro_puerta,
                             ci, extension, nombre, paterno, materno, nacionalidad,
                             estado_civil, nro_telf, sexo, fecha_nacimiento, 
-                            id_profesion, id_area, cargo, nro_matricula, id_microred,
-                            fecha_ingreso, fecha_creacion}) => {
+                            id_profesion, nombre_profesion, id_area, nombre_area, cargo, nombre_cargo,
+                             nro_matricula, id_microred, fecha_ingreso, fecha_creacion}) => {
     let connection;
     try {
         // Obtener conexión
@@ -28,10 +28,26 @@ const createStaff = async({ departamento, municipio, zona, av_calle, nro_puerta,
         const [residence] = await connection.query(
             `INSERT INTO domicilio (id_domicilio, nro_puerta, id_persona) VALUES (?, ?, ?)`, 
             [id_domicilio, nro_puerta, id_persona])
+        
+        if(!id_profesion){
+            const [profession] = await connection.query(
+                `insert into profesion (nombre_profesion) values(?)`,
+                [nombre_profesion]
+            )
+            id_profesion=profession.insertId;
+        }
+
+        if(!id_area){
+            const [workArea] = await connection.query(
+                `insert into area_trabajo (nombre_area) values(?)`,
+                [nombre_area]
+            )
+            id_area=workArea.insertId;
+        }
 
         const [staff] = await connection.query(
             `INSERT INTO personal (cargo, nro_matricula, fecha_ingreso, fecha_creacion, id_area, id_profesion, id_persona, id_microred) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, 
-            [ cargo, nro_matricula || null, fecha_ingreso || null, fecha_creacion, id_area, id_profesion, id_persona, id_microred || null])    
+            [ cargo || nombre_cargo, nro_matricula || null, fecha_ingreso || null, fecha_creacion, id_area, id_profesion, id_persona, id_microred || null])    
 
         // Confirmar si todo salió bien
         await connection.commit();
@@ -53,9 +69,13 @@ const showStaff = async() =>{
     try {
         connection = await pool.getConnection();
         const query = {
-        text: `select *
-            from personal xpl, persona xpe, domicilio xdo, direccion xdi
-            where xpl.id_persona=xpe.id_persona and xpe.id_persona = xdo.id_persona
+        text: `select xpl.id_personal, xpl.nro_matricula, xpl.cargo, xpl.fecha_ingreso,
+            concat(xpe.ci," " ,xpe.extension) as ci,
+            concat(xpe.paterno," " ,xpe.materno," " ,xpe.nombre) as nombres, xa.nombre_area
+            
+
+            from personal xpl, persona xpe, domicilio xdo, direccion xdi, area_trabajo xa
+            where xpl.id_persona=xpe.id_persona and xpl.id_area=xa.id_area and xpe.id_persona = xdo.id_persona
             and xdo.id_domicilio = xdi.id_direccion
             and xpl.estado_personal=1;`,
         }
@@ -69,6 +89,66 @@ const showStaff = async() =>{
        if (connection) connection.release();
     }  
 }
+
+const showWorkArea = async() =>{
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        const query = {
+        text: `select *
+            from area_trabajo`,
+        }
+
+        const [result] = await connection.query(query.text);
+        return result;
+    } catch (error) {
+        error.source = 'model';
+        throw error;
+    } finally{
+       if (connection) connection.release();
+    }  
+}
+
+const showProfession = async() =>{
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        const query = {
+        text: `select *
+            from profesion`,
+        }
+
+        const [result] = await connection.query(query.text);
+        return result;
+    } catch (error) {
+        error.source = 'model';
+        throw error;
+    } finally{
+       if (connection) connection.release();
+    }  
+}
+
+const showPosition = async() =>{
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        const query = {
+        text: `select distinct cargo
+            from personal
+            where estado_personal=1`,
+        }
+
+        const [result] = await connection.query(query.text);
+        return result;
+    } catch (error) {
+        error.source = 'model';
+        throw error;
+    } finally{
+       if (connection) connection.release();
+    }  
+}
+
+
 
 const showStaffById = async({ id_personal }) =>{
     let connection;
@@ -216,7 +296,11 @@ export const updateStaff = async({departamento, municipio, zona, av_calle,
     } 
 }
 
-export const reactivateStaff = async({id_personal})=>{
+export const reactivateStaff = async({id_personal, departamento, municipio, zona, av_calle, nro_puerta,
+                            ci, extension, nombre, paterno, materno, nacionalidad,
+                            estado_civil, nro_telf, sexo, fecha_nacimiento, 
+                            id_profesion, nombre_profesion, id_area, nombre_area, cargo, nombre_cargo,
+                             nro_matricula, id_microred, fecha_ingreso, fecha_creacion})=>{
     let connection;
     try {
         connection = await pool.getConnection();
@@ -241,6 +325,9 @@ export const staffModel = {
     createStaff,
     verifyIfExistStaff,
     showStaff,
+    showWorkArea,
+    showProfession,
+    showPosition,
     updateStaff,
     deleteStaff,
     verifyIfExistedStaff,

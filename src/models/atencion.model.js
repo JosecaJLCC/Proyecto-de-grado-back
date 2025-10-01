@@ -30,7 +30,8 @@ const showAttention = async() =>{
                 concat(xpe.paterno," ",xpe.materno," ",xpe.nombre) as nombres,
                 xa.fecha_atencion
             from persona xpe, paciente xpa, atencion xa 
-            where xpa.id_persona=xpe.id_persona and xpa.id_paciente=xa.id_paciente and xpa.estado_paciente=1;`,
+            where xpa.id_persona=xpe.id_persona and xpa.id_paciente=xa.id_paciente and xpa.estado_paciente=1
+            and date(fecha_atencion)=date(now());`,
         }
         const [result] = await connection.query(query.text);
         return result;

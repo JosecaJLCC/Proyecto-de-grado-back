@@ -77,12 +77,12 @@ const createAttention = async(req, res)=>{
             return res.status(200).json({ok:false, message:'Faltan datos por llenar'})
         }
         
-        const fecha_atencion = fechaHoraBolivia();
+        const fecha_atencion = fechaBolivia();
         
-        let verifyAttention= await attentionModel.verifyAttention({id_paciente, fecha_atencion:fecha_atencion.split(" ")[0]})
+        let verifyAttention= await attentionModel.verifyAttention({id_paciente, fecha_atencion})
         console.log("verifyattention", verifyAttention)
         if(verifyAttention.length>0){
-            return res.status(409).json({ok:false, message:`El paciente ya fue registrado`});
+            return res.status(200).json({ok:false, message:`El paciente ya fue registrado`});
         }
         console.log("hizo la verify")
         const result = await attentionModel.createAttention({ id_usuario_rol, id_paciente, fecha_atencion })
