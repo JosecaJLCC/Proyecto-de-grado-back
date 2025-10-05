@@ -1,19 +1,19 @@
 import {staffModel} from "../models/personal.model.js";
-
+import { fechaBolivia, fechaHoraBolivia } from "../utils/fechaBolivia.js";
 const createStaff = async(req, res)=>{
     try {
         const { domicilio,
                 ci, extension, nombre, paterno, materno, nacionalidad,
                 estado_civil, nro_telf, sexo, fecha_nacimiento,
                 id_profesion, nombre_profesion, id_area, nombre_area, cargo, 
-                nombre_cargo, nro_matricula, fecha_ingreso, id_microred} = req.body;
+                nro_matricula, fecha_ingreso, id_microred} = req.body;
                 console.log("body de staff",req.body)
         /* Verificar que los campos no esten vacios */
         if(!domicilio.departamento || !domicilio.municipio || !domicilio.zona ||
              !domicilio.av_calle || !domicilio.nro_puerta || 
             !ci || !extension || !nombre || !paterno || !materno || !nacionalidad ||
             !estado_civil || !nro_telf || !sexo || !fecha_nacimiento ||
-        !(id_profesion || nombre_profesion) || !(id_area || nombre_area) || !(cargo || nombre_cargo)){
+        !(id_profesion || nombre_profesion) || !(id_area || nombre_area) || !cargo){
             return res.status(200).json({ok:false, message:'Faltan datos del staff por llenar'})
         }
         const verifyIfExistStaff = await staffModel.verifyIfExistStaff({ci, extension});
@@ -24,26 +24,31 @@ const createStaff = async(req, res)=>{
         const verifyIfExistedStaff = await staffModel.verifyIfExistedStaff({ci, extension});
         if(verifyIfExistedStaff.length>0){
             console.log("mi verificacion",verifyIfExistedStaff[0].id_personal)
+            const id_direccion = verifyIfExistedStaff[0].id_domicilio;
+            const id_persona = verifyIfExistedStaff[0].id_persona;
             await staffModel.reactivateStaff({id_personal:verifyIfExistedStaff[0].id_personal,
+                id_persona, id_direccion,
                 departamento:domicilio.departamento, 
-                municipio:domicilio.municipio, zona:domicilio.zona, 
-                av_calle:domicilio.av_calle, nro_puerta:domicilio.nro_puerta,
+                municipio:domicilio.municipio,
+                zona:domicilio.zona, 
+                av_calle:domicilio.av_calle, 
+                nro_puerta:domicilio.nro_puerta,
                 ci, extension, nombre, paterno, materno, nacionalidad,
                 estado_civil, nro_telf, sexo, fecha_nacimiento,
                 id_profesion, nombre_profesion, id_area, nombre_area, cargo, 
-                nombre_cargo, nro_matricula, fecha_ingreso, id_microred
+                nro_matricula: nro_matricula || null, fecha_ingreso: fecha_ingreso || null, 
+                id_microred:id_microred || null
             })
             return res.status(201).json({ok:true, message:"staff reestablecido con exito"});
         }
-        const ahora = new Date();
-        const fecha_creacion = ahora.toISOString().slice(0, 19).replace('T', ' ');
+        const fecha_creacion = fechaHoraBolivia();
         const result = await staffModel.createStaff({ departamento:domicilio.departamento, 
                                                     municipio:domicilio.municipio, zona:domicilio.zona, 
                                                     av_calle:domicilio.av_calle, nro_puerta:domicilio.nro_puerta,
                                                     ci, extension, nombre, paterno, materno, nacionalidad,
                                                     estado_civil, nro_telf, sexo, fecha_nacimiento,
                                                     id_profesion, nombre_profesion, id_area, nombre_area, cargo, 
-                                                    nombre_cargo, nro_matricula, fecha_ingreso, fecha_creacion, id_microred })
+                                                    nro_matricula, fecha_ingreso, fecha_creacion, id_microred })
         res.status(201).json({ok:true, data:result ,message:"staff agregado con exito"});
     } catch (error) {
         if (error.source === 'model') {
@@ -104,7 +109,8 @@ const updateStaff = async (req, res) => {
                 ci, extension, nombre, paterno, materno, nacionalidad,
                 estado_civil, nro_telf, sexo, fecha_nacimiento,
                 id_profesion, nombre_profesion, id_area, nombre_area, cargo, 
-                nombre_cargo, nro_matricula, fecha_ingreso, id_microred} = req.body;       
+                nro_matricula, fecha_ingreso, id_microred} = req.body;  
+        console.log("body de update:", req.body, req.params)     
         // Validación mínima
         if (!id_personal) {
             return res.status(200).json({ ok: false, message: 'El id del personal es obligatorio' });
@@ -137,9 +143,8 @@ const updateStaff = async (req, res) => {
             id_area: id_area || null, 
             nombre_area: nombre_area || null, 
             cargo: cargo || null, 
-            nombre_cargo: nombre_cargo || null, 
             nro_matricula: nro_matricula || null,
-            fecha_ingreso: fecha_ingreso,
+            fecha_ingreso: fecha_ingreso || null,
             id_microred: id_microred || null
         });
         res.status(200).json({ ok: true, message: 'Staff actualizado correctamente', data: result });

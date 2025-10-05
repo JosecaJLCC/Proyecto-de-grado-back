@@ -1,4 +1,4 @@
-import { fechaHoraBolivia } from "../../hora.js";
+import { fechaHoraBolivia } from "../utils/fechaBolivia.js";
 import { microredModel } from "../models/microred.model.js";
 
 const createMicroRed = async(req, res)=>{

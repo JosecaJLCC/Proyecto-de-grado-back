@@ -127,11 +127,11 @@ export const deleteEstablishment = async({id_establecimiento}) =>{
 }
 
 export const updateEstablishment = async({departamento, municipio, zona, av_calle, 
-                                nombre_establecimiento, tipo_establecimiento, id_microred, id_establecimiento})=>{
+                                nombre_establecimiento, tipo_establecimiento, 
+                                id_microred, id_establecimiento})=>{
     let connection;
     try {
         connection = await pool.getConnection();
-        // Iniciar transacción
         await connection.beginTransaction();
         let [resultDirection] = await connection.query(`update direccion 
                     set departamento=ifnull(?, departamento),
@@ -140,14 +140,12 @@ export const updateEstablishment = async({departamento, municipio, zona, av_call
                     av_calle=ifnull(?, av_calle)
                     where id_direccion=?;`,
                     [departamento, municipio, zona, av_calle, id_establecimiento]);
-
         let [resultEstablishment] = await connection.query(`update establecimiento 
                     set nombre_establecimiento=ifnull(?, nombre_establecimiento),
                     tipo_establecimiento=ifnull(?, tipo_establecimiento),
                     id_microred = ifnull(?, id_microred)
                     where id_establecimiento=? and estado_establecimiento=1;`,
                     [nombre_establecimiento, tipo_establecimiento, id_microred, id_establecimiento ])
-        
         await connection.commit();
         return {resultEstablishment, resultDirection};
     }catch (error) {
@@ -155,17 +153,24 @@ export const updateEstablishment = async({departamento, municipio, zona, av_call
         error.source = 'model';
         throw error;
     } finally {
-        // Liberar conexión si fue obtenida
         if (connection) connection.release();
     } 
 }
 
 export const reactivateEstablishment = async({ departamento, municipio, zona, av_calle,
-    nombre_establecimiento, tipo_establecimiento, id_microred, id_establecimiento})=>{
+                                        nombre_establecimiento, tipo_establecimiento, 
+                                        id_microred, id_establecimiento})=>{
     let connection;
     try {
         connection = await pool.getConnection();
-        
+        await connection.beginTransaction();
+        let [resultDirection] = await connection.query(`update direccion 
+                    set departamento=ifnull(?, departamento),
+                    municipio=ifnull(?, municipio),
+                    zona=ifnull(?, zona),
+                    av_calle=ifnull(?, av_calle)
+                    where id_direccion=?;`,
+                    [departamento, municipio, zona, av_calle, id_establecimiento]);                    
         let [resultEstablishment] = await connection.query( `update establecimiento 
                     set estado_establecimiento=1,
                     nombre_establecimiento=ifnull(?, nombre_establecimiento),
@@ -173,16 +178,10 @@ export const reactivateEstablishment = async({ departamento, municipio, zona, av
                     id_microred=ifnull(?, id_microred)
                     where id_establecimiento=?;`, 
                     [nombre_establecimiento, tipo_establecimiento, id_microred, id_establecimiento]);
-
-         let [resultDirection] = await connection.query(`update direccion 
-                    set departamento=ifnull(?, departamento),
-                    municipio=ifnull(?, municipio),
-                    zona=ifnull(?, zona),
-                    av_calle=ifnull(?, av_calle)
-                    where id_direccion=?;`,
-                    [departamento, municipio, zona, av_calle, id_establecimiento]);                    
+        await connection.commit(); 
         return {resultEstablishment, resultDirection};
     } catch (error) {
+        if (connection) await connection.rollback();
         error.source = 'model';
         throw error;
     } finally{

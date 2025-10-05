@@ -6,17 +6,13 @@ const createMicroRed = async({id_microred, nombre_microred, red, fecha_creacion,
     try {
         // Obtener conexión
         connection = await pool.getConnection();
-
         const query = {
             text: `INSERT INTO microred (id_microred, nombre_microred, red, fecha_creacion, id_director) 
                     VALUES (?, ?, ?, ?, ?)`,
             values: [id_microred, nombre_microred, red, fecha_creacion, id_director]
         };
-
         const [result] = await connection.query(query.text, query.values);
-
         return result;
-
     } catch (error) {
         error.source = 'model';
         throw error;

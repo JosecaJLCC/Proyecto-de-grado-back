@@ -20,7 +20,9 @@ app.use(express.json());
 app.use(express.urlencoded({extended:true}));
 app.use(morgan('dev'));
 
-app.use(cors());
+app.use(cors({
+  origin: "http://localhost:5173"
+}));
 
 /*Para las rutas de la carpeta donde conservo las fotos de perfil  */
 app.use('/uploads', express.static('./src/uploads'));

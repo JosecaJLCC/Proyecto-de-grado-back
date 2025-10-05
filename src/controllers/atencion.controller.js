@@ -1,5 +1,5 @@
 import { attentionModel } from "../models/atencion.model.js";
-import { fechaBolivia, fechaHoraBolivia } from "../../hora.js";
+import { fechaBolivia, fechaHoraBolivia } from "../utils/fechaBolivia.js";
 
 const registrarAtencion = async(req, res)=>{
     try {

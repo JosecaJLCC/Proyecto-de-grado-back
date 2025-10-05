@@ -4,7 +4,7 @@ import { pool } from "../database.js";
 const createStaff = async({ departamento, municipio, zona, av_calle, nro_puerta,
                             ci, extension, nombre, paterno, materno, nacionalidad,
                             estado_civil, nro_telf, sexo, fecha_nacimiento, 
-                            id_profesion, nombre_profesion, id_area, nombre_area, cargo, nombre_cargo,
+                            id_profesion, nombre_profesion, id_area, nombre_area, cargo,
                              nro_matricula, id_microred, fecha_ingreso, fecha_creacion}) => {
     let connection;
     try {
@@ -47,7 +47,7 @@ const createStaff = async({ departamento, municipio, zona, av_calle, nro_puerta,
 
         const [staff] = await connection.query(
             `INSERT INTO personal (cargo, nro_matricula, fecha_ingreso, fecha_creacion, id_area, id_profesion, id_persona, id_microred) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, 
-            [ cargo || nombre_cargo, nro_matricula || null, fecha_ingreso || null, fecha_creacion, id_area, id_profesion, id_persona, id_microred || null])    
+            [ cargo, nro_matricula || null, fecha_ingreso || null, fecha_creacion, id_area, id_profesion, id_persona, id_microred || null])    
 
         // Confirmar si todo salió bien
         await connection.commit();
@@ -72,8 +72,6 @@ const showStaff = async() =>{
         text: `select xpl.id_personal, xpl.nro_matricula, xpl.cargo, xpl.fecha_ingreso,
             concat(xpe.ci," " ,xpe.extension) as ci,
             concat(xpe.paterno," " ,xpe.materno," " ,xpe.nombre) as nombres, xa.nombre_area
-            
-
             from personal xpl, persona xpe, domicilio xdo, direccion xdi, area_trabajo xa
             where xpl.id_persona=xpe.id_persona and xpl.id_area=xa.id_area and xpe.id_persona = xdo.id_persona
             and xdo.id_domicilio = xdi.id_direccion
@@ -98,7 +96,6 @@ const showWorkArea = async() =>{
         text: `select *
             from area_trabajo`,
         }
-
         const [result] = await connection.query(query.text);
         return result;
     } catch (error) {
@@ -117,7 +114,6 @@ const showProfession = async() =>{
         text: `select *
             from profesion`,
         }
-
         const [result] = await connection.query(query.text);
         return result;
     } catch (error) {
@@ -148,8 +144,6 @@ const showPosition = async() =>{
     }  
 }
 
-
-
 const showStaffById = async({ id_personal }) =>{
     let connection;
     try {
@@ -163,7 +157,7 @@ const showStaffById = async({ id_personal }) =>{
         }
 
         const [result] = await connection.query(query.text, query.values);
-        console.log("mi result:",result)
+        /* console.log("mi result:",result) */
         return result;
     } catch (error) {
         error.source = 'model';
@@ -202,9 +196,10 @@ const verifyIfExistedStaff = async({ci, extension}) =>{
         connection = await pool.getConnection()
         const query = {
             text: `select *
-                from personal xpl, persona xpe
+                from personal xpl, persona xpe, domicilio xdo
                 where xpe.ci=? and xpe.extension=? and 
-                xpl.id_persona=xpe.id_persona and xpl.estado_personal=0;`,
+                xpl.id_persona=xpe.id_persona and 
+                xpe.id_persona=xdo.id_persona and xpl.estado_personal=0;`,
             values: [ci, extension]
         }
 
@@ -238,11 +233,11 @@ export const deleteStaff = async({id_personal}) =>{
     }  
 }
 
-export const updateStaff = async({departamento, municipio, zona, av_calle,
-                                    id_direccion, nro_puerta, id_persona,
-                            ci, extension, nombre, paterno, materno, nacionalidad,
-                            estado_civil, nro_telf, sexo, fecha_nacimiento,
-                            cargo, id_area, id_personal, id_microred})=>{
+export const updateStaff = async({id_personal, id_persona, id_direccion, departamento, municipio, 
+                                    zona, av_calle, nro_puerta, ci, extension, nombre, paterno, 
+                                    materno, nacionalidad, estado_civil, nro_telf, sexo, 
+                                    fecha_nacimiento, cargo, id_area, nombre_area, id_profesion, 
+                                    nombre_profesion, id_microred, nro_matricula, fecha_ingreso})=>{
     let connection;
     try {
         connection = await pool.getConnection();
@@ -276,15 +271,34 @@ export const updateStaff = async({departamento, municipio, zona, av_calle,
                     where id_persona=?`,
                     [ci, extension, nombre, paterno, materno, nacionalidad,
                             estado_civil, nro_telf, sexo, fecha_nacimiento, id_persona ])
-        
+
+        if(!id_profesion && nombre_profesion){
+            const [profession] = await connection.query(
+                `insert into profesion (nombre_profesion) values(?)`,
+                [nombre_profesion]
+            )
+            id_profesion=profession.insertId;
+        }
+
+        if(!id_area && nombre_area){
+            const [workArea] = await connection.query(
+                `insert into area_trabajo (nombre_area) values(?)`,
+                [nombre_area]
+            )
+            id_area=workArea.insertId;
+        }
+
         let [resultStaff] = await connection.query(`update personal 
                     set cargo=ifnull(?, cargo),
                     id_area=ifnull(?, id_area),
-                    id_microred=ifnull(?, id_microred)
+                    id_profesion=ifnull(?, id_profesion),
+                    id_microred=ifnull(?, id_microred),
+                    nro_matricula=ifnull(?, nro_matricula),
+                    fecha_ingreso=ifnull(?, fecha_ingreso)
                     where id_personal=? and estado_personal=1;`,
-                    [cargo, id_area, id_personal, id_microred ])
+                    [cargo, id_area, id_profesion, id_microred, nro_matricula, fecha_ingreso, id_personal])
         
-        connection.commit();
+        await connection.commit();
         return {resultPerson, resultDirection, resultResidence, resultStaff};
     }catch (error) {
         if (connection) await connection.rollback(); // Revierte todo si algo falla
@@ -296,24 +310,73 @@ export const updateStaff = async({departamento, municipio, zona, av_calle,
     } 
 }
 
-export const reactivateStaff = async({id_personal, departamento, municipio, zona, av_calle, nro_puerta,
-                            ci, extension, nombre, paterno, materno, nacionalidad,
-                            estado_civil, nro_telf, sexo, fecha_nacimiento, 
-                            id_profesion, nombre_profesion, id_area, nombre_area, cargo, nombre_cargo,
-                             nro_matricula, id_microred, fecha_ingreso, fecha_creacion})=>{
+export const reactivateStaff = async({id_personal, id_persona, id_direccion, departamento, municipio, 
+                                    zona, av_calle, nro_puerta, ci, extension, nombre, paterno, 
+                                    materno, nacionalidad, estado_civil, nro_telf, sexo, 
+                                    fecha_nacimiento, cargo, id_area, nombre_area, id_profesion, 
+                                    nombre_profesion, id_microred, nro_matricula, fecha_ingreso})=>{
     let connection;
     try {
         connection = await pool.getConnection();
-         const query = {
-            text: `update personal 
-                    set estado_personal=1
-                    where id_personal=?;`,
-            values:[id_personal]
+        await connection.beginTransaction();
+        let [resultDirection]=await connection.query(`update direccion 
+                    set departamento=ifnull(?, departamento),
+                    municipio=ifnull(?, municipio),
+                    zona=ifnull(?, zona),
+                    av_calle=ifnull(?, av_calle)
+                    where id_direccion=?;`,
+                    [departamento, municipio, zona, av_calle, id_direccion]);
+
+        let [resultResidence] = await connection.query(`update domicilio 
+                    set nro_puerta=ifnull(?, nro_puerta)
+                    where id_domicilio=?;`,
+                    [nro_puerta, id_direccion]);
+
+        let [resultPerson] = await connection.query(`update persona 
+                    set ci=ifnull(?, ci),
+                    extension=ifnull(?, extension),
+                    nombre=ifnull(?, nombre),
+                    paterno = ifnull(?, paterno),
+                    materno = ifnull(?, materno),
+                    nacionalidad = ifnull(?, nacionalidad),
+                    estado_civil = ifnull(?, estado_civil),
+                    nro_telf = ifnull(?, nro_telf),
+                    sexo = ifnull(?, sexo),
+                    fecha_nacimiento = ifnull(?, fecha_nacimiento)
+                    where id_persona=?`,
+                    [ci, extension, nombre, paterno, materno, nacionalidad,
+                            estado_civil, nro_telf, sexo, fecha_nacimiento, id_persona ])
+        
+        if(!id_profesion && nombre_profesion){
+            const [profession] = await connection.query(
+                `insert into profesion (nombre_profesion) values(?)`,
+                [nombre_profesion]
+            )
+            id_profesion=profession.insertId;
         }
-        let [result] = await connection.query(query.text, query.values)
-        console.log("hecho model", result )
-        return result;
+
+        if(!id_area && nombre_area){
+            const [workArea] = await connection.query(
+                `insert into area_trabajo (nombre_area) values(?)`,
+                [nombre_area]
+            )
+            id_area=workArea.insertId;
+        }
+
+        let [resultStaff] = await connection.query(`update personal 
+                    set estado_personal=1,
+                    cargo=ifnull(?, cargo),
+                    id_area=ifnull(?, id_area),
+                    id_profesion=ifnull(?, id_profesion),
+                    id_microred=ifnull(?, id_microred),
+                    nro_matricula=ifnull(?, nro_matricula),
+                    fecha_ingreso=ifnull(?, fecha_ingreso)
+                    where id_personal=?;`,
+                    [cargo, id_area, id_profesion, id_microred, nro_matricula, fecha_ingreso, id_personal])
+        await connection.commit();
+        return {resultPerson, resultDirection, resultResidence, resultStaff};
     } catch (error) {
+        if (connection) await connection.rollback(); // Revierte todo si algo falla
         error.source = 'model';
         throw error;
     } finally{

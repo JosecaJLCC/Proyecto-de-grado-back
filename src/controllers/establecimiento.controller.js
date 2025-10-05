@@ -1,5 +1,5 @@
 import {establishmentModel} from "../models/establecimiento.model.js";
-import { fechaBolivia, fechaHoraBolivia } from "../../hora.js";
+import { fechaBolivia, fechaHoraBolivia } from "../utils/fechaBolivia.js";
 const createEstablishment = async(req, res)=>{
     try {
         const { departamento, municipio, zona, av_calle, 
@@ -21,8 +21,7 @@ const createEstablishment = async(req, res)=>{
             console.log("mi verificacion",verifyIfExistedEstablishment[0].id_establecimiento)
             await establishmentModel.reactivateEstablishment({id_establecimiento:verifyIfExistedEstablishment[0].id_establecimiento,
                                                             departamento, municipio, zona, av_calle,
-                                                            nombre_establecimiento, tipo_establecimiento, id_microred
-            })
+                                                            nombre_establecimiento, tipo_establecimiento, id_microred})
             return res.status(201).json({ok:true, message:"establecimiento reestablecido con exito"});
         }
         
@@ -31,7 +30,6 @@ const createEstablishment = async(req, res)=>{
         const result = await establishmentModel.createEstablishment({ departamento, municipio, zona, av_calle, 
                                                                     nombre_establecimiento, tipo_establecimiento, 
                                                                  fecha_creacion, id_microred })
-
         res.status(201).json({ok:true, data:result ,message:"establecimiento agregado con exito"});
     } catch (error) {
         if (error.source === 'model') {
@@ -89,13 +87,11 @@ export const updateEstablishment = async (req, res) => {
     try {
         const { id_establecimiento } = req.params;
         const { departamento, municipio, zona, av_calle, nombre_establecimiento, tipo_establecimiento, id_microred } = req.body;
-        console.log("update establishment",req.body, req.params)
-                                
+        console.log("update establishment",req.body, req.params)                         
         // Validación mínima
         if (!id_establecimiento) {
             return res.status(200).json({ ok: false, message: 'El id de establecimiento es obligatorio' });
         }
- console.log("entro")
         const result = await establishmentModel.updateEstablishment({
             id_establecimiento,
             nombre_establecimiento: nombre_establecimiento || null,

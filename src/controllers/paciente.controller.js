@@ -1,5 +1,5 @@
 import {patientModel} from "../models/paciente.model.js";
-import { fechaBolivia, fechaHoraBolivia } from "../../hora.js";
+import { fechaBolivia, fechaHoraBolivia } from "../utils/fechaBolivia.js";
 const createPatient = async(req, res)=>{
     try {
         const { departamento, municipio, zona, av_calle, nro_puerta,

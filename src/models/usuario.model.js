@@ -315,5 +315,4 @@ export const userModel = {
     logLogin,
     showUserByCorreo,
     chooseEstablishment
-
 }
