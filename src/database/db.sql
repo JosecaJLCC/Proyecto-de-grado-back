@@ -169,12 +169,17 @@ create table if not exists historial(
     constraint fk_paciente_historial
 		foreign key (id_paciente) references paciente(id_paciente) on delete cascade
 );
+
+select distinct cargo
+from personal
+where estado_personal=1;
+
 select  DATE(CONVERT_TZ(now(), '+00:00', '-04:00'));
 SELECT CONVERT_TZ(NOW(), '+00:00', '-04:00') AS hora_bolivia;
-
+select version();
 use cs_copacabana;
 select * from atencion;
-select * from rol;
+select * from paciente;
 select * from area_trabajo;
 select * from profesion;
 select * from rol;
@@ -185,6 +190,10 @@ select * from establecimiento;
 select * from microred;
 select * from usuario_rol;
 insert into usuario_rol(id_rol, id_usuario) values(3,1);
+select * from persona;
+select * from domicilio;
+
+update microred set id_director=2 where id_microred=200805;
 
 SELECT 
     xu.id_usuario,
@@ -230,3 +239,16 @@ select xpa.id_paciente, concat(xpe.ci, " ", xpe.extension) as ci,
                 xa.fecha_atencion
             from persona xpe, paciente xpa, atencion xa 
             where xpa.id_persona=xpe.id_persona and xpa.id_paciente=xa.id_paciente and xpa.estado_paciente=1;
+            
+            select xm.id_microred, xm.nombre_microred, xm.red, xm.id_director,
+            DATE_FORMAT(xm.fecha_creacion, '%Y-%m-%d %H:%i:%s') AS fecha_creacion, 
+            concat(xpe.paterno, " ", xpe.materno, " ", xpe.nombre) as nombres, 
+            concat(xpe.ci," ",xpe.extension) as ci 
+            from microred xm, personal xpl, persona xpe 
+            where estado_microred = 1 and xm.id_director=xpl.id_personal and xpl.id_persona=xpe.id_persona;
+            
+select *
+from personal xpl, persona xpe, domicilio xdo
+where xpe.ci="12796720" and xpe.extension="LP" and 
+xpl.id_persona=xpe.id_persona and 
+xpe.id_persona=xdo.id_persona;

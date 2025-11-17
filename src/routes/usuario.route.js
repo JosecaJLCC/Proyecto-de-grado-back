@@ -13,7 +13,7 @@ rutas.post('/login', userController.login)
 rutas.post('/create', upload.single('imagenPerfil') ,userController.createUser)
 rutas.get('/show', userController.showUser)
 rutas.get("/profile", verificarToken, userController.profile)
-rutas.get("/choose/:id_usuario?", userController.chooseEstablishment)
 rutas.post("/session", userController.setSession)
+rutas.get("/search/:ci", userController.searchUser)
 
 export default rutas;

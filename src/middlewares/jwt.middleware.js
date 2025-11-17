@@ -14,20 +14,20 @@ export const verificarToken = (req, res, next) => {
         /* el token viene en este formato: bearer tu_token */
         /* Por eso dividimos la parte del nuestro token que es lo que nos importa */
         token=token.split(" ")[1];
+        const {nombre_usuario, nombre_rol, id_rol, 
+            id_usuario, id/* es id_usuario_rol */, id_personal, 
+            id_establecimiento,nombre_establecimiento, perfil} = jwt.verify(token, JWT_TOKEN);
 
-        
-
-        const {correo, nombre_rol, id_rol, id_usuario, id_usuario_rol, id_personal, id_establecimiento, perfil} = jwt.verify(token, JWT_TOKEN);
-
-        req.correo= correo,
+        req.nombre_usuario= nombre_usuario,
         req.nombre_rol= nombre_rol,       
         req.id_rol= id_rol,
         req.id_usuario= id_usuario,
-        req.id_usuario_rol= id_usuario_rol,
+        req.id= id,
         req.id_personal= id_personal,
         req.id_establecimiento= id_establecimiento,
+        req.nombre_establecimiento=nombre_establecimiento,
         req.perfil= perfil,
-        
+
         next()    
     } catch (error) {
         console.log("mi error: ",error)
@@ -35,16 +35,22 @@ export const verificarToken = (req, res, next) => {
     }
 }
 
-
-const verifyAdmin = (req, res, next)=>{
+const verifyPrincipal = (req, res, next)=>{
     if(req.id_rol==1){
         return next();
     }
     res.status(403).json({ok: false, msg:'Usuario no autorizado'})
 }
 
-const verifyPrincipal = (req, res, next)=>{
+const verifyMedicalStaff = (req, res, next)=>{
     if(req.id_rol==2){
+        return next();
+    }
+    res.status(403).json({ok: false, msg:'Usuario no autorizado'})
+}
+
+const verifyOperationalStaff = (req, res, next)=>{
+    if(req.id_rol==3){
         return next();
     }
     res.status(403).json({ok: false, msg:'Usuario no autorizado'})

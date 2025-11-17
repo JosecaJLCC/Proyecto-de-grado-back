@@ -6,11 +6,10 @@ import { verificarToken } from '../middlewares/jwt.middleware.js';
 export const rutas = Router();
 rutas.post('/create'/* , verificarToken */ ,patientController.createPatient)
 rutas.get('/show', patientController.showPatient)
-rutas.patch('/update/:id_paciente?', patientController.updatePatient)
-rutas.delete('/delete/:id_paciente?'/* ,verificarToken */, patientController.deletePatient)
+rutas.patch('/update/:id?', patientController.updatePatient)
+rutas.delete('/delete/:id?'/* ,verificarToken */, patientController.deletePatient)
 
-rutas.post('/create2'/* , verificarToken */ ,patientController.createAttention)
-rutas.get('/show2', patientController.showAttention)
+rutas.get('/showfolder', patientController.showFolder)
 
 /* rutas.patdeletePatient('/personas/:id', putDataById)
 

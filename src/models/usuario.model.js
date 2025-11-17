@@ -1,7 +1,7 @@
 /* Se importa la configuracion de la conexion con la base de datos */
 import { pool } from "../database.js";
 
-const createUser = async({ correo, clave, perfil, fecha_creacion, id_personal, id_rol }) => {
+const createUser = async({ nombre_usuario, clave, perfil, fecha_creacion, id_personal, id_rol }) => {
     let connection;
     try {
         // Obtener conexión
@@ -10,11 +10,11 @@ const createUser = async({ correo, clave, perfil, fecha_creacion, id_personal, i
         await connection.beginTransaction();
 
         const [user] = await connection.query(
-        `INSERT INTO usuario (correo, clave, perfil, fecha_creacion, id_personal) 
+        `INSERT INTO usuario (nombre_usuario, clave, perfil, fecha_creacion, id_personal) 
                     VALUES (?, ?, ?, ?, ?)`, 
-        [correo, clave, perfil, fecha_creacion, id_personal])
-        let id_usuario=user.insertId;
+        [nombre_usuario, clave, perfil, fecha_creacion, id_personal])
 
+        let id_usuario=user.insertId;
         const [rol_user] = await connection.query(
         `INSERT INTO usuario_rol (id_rol, id_usuario, fecha_creacion) 
                     VALUES (?, ?, ?)`, 
@@ -40,11 +40,10 @@ const showUser = async() =>{
         const query = {
         text: `select *
             from usuario xu, persona xpe, personal xpl, direccion xdi, domicilio xdo 
-            where xu.id_personal=xpl.id_personal and xpl.id_persona=xpe.id_persona 
-            and xpe.id_persona=xdo.id_persona and xdo.id_domicilio=xdi.id_direccion 
+            where xpl.id=xu.id_personal and xpe.id=xpl.id_persona
+            and xpe.id=xdo.id_persona and xdo.id=xdi.id
             and xu.estado_usuario=1;`,
         }
-
         const [result] = await connection.query(query.text);
         return result;
     } catch (error) {
@@ -55,39 +54,16 @@ const showUser = async() =>{
     }  
 }
 
-const showUserById = async({ id_usuario }) =>{
-    let connection;
-    try {
-        connection = await pool.getConnection();
-        const query = {
-            text: `select *
-            from usuario xu, persona xpe, personal xpl, domicilio xdo 
-            where xu.id_usuario=? and xu.id_personal=xpl.id_personal and 
-            xpl.id_persona=xpe.id_persona and xpe.id_persona=xdo.id_persona
-            and xu.estado_usuario=1;`,
-            values: [id_usuario]
-        }
-
-        const [result] = await connection.query(query.text, query.values);
-        console.log("mi result:",result)
-        return result;
-    } catch (error) {
-        error.source = 'model';
-        throw error;
-    } finally{
-       if (connection) connection.release();
-    }  
-}
-
-const verifyIfExistUser = async({correo}) =>{
+const verifyIfExistUser = async({ ci }) =>{
     let connection;
     try {
         connection = await pool.getConnection()
         const query = {
-            text: `select *
-                from usuario  
-                where correo = ? and estado_usuario=1;`,
-            values: [correo]
+            text: `select xu.id, xpe.id as id_persona, xpl.id as id_personal  
+                    from usuario xu, persona xpe, personal xpl
+                    where xpe.ci = ? and xpl.id_persona=xpe.id and
+                    xpl.id=xu.id_personal and estado_usuario=1;`,
+            values: [ci]
         }
         const [result] = await connection.query(query.text, query.values);
         return result;
@@ -100,36 +76,34 @@ const verifyIfExistUser = async({correo}) =>{
     } 
 }
 
-const verifyIfExistedUser = async({correo}) =>{
+const verifyIfExistedUser = async({ ci }) =>{
     let connection;
     try {
         connection = await pool.getConnection()
         const query = {
-            text: `select *
-                from usuario  
-                where correo = ? and estado_usuario=0;`,
-            values: [correo]
+            text: `select xu.id, xpe.id as id_persona, xpl.id as id_personal  
+                    from usuario xu, persona xpe, personal xpl
+                    where xpe.ci = ? and xpl.id_persona=xpe.id and
+                    xpl.id=xu.id_personal and estado_usuario=0;`,
+            values: [ci]
         }
-
         const [result] = await connection.query(query.text, query.values);
         return result;
-
     } catch (error) {
         error.source = 'model';
         throw error;
-
     } finally {
         if (connection) connection.release();
     } 
 }
 
-export const deleteUser = async({id_usuario}) =>{
+export const deleteUser = async({id}) =>{
     let connection;
     try {
         connection = await pool.getConnection();
         const query = {
-            text: 'update usuario set estado_usuario = 0 where id_usuario = ?',
-            values:[id_usuario]
+            text: 'update usuario set estado_usuario = 0 where id = ?',
+            values:[id]
         }
         const [result] = await connection.query(query.text, query.values)  
         return result;
@@ -141,23 +115,21 @@ export const deleteUser = async({id_usuario}) =>{
     }  
 }
 
-export const updateUser = async({correo, clave, perfil, id_usuario })=>{
+export const updateUser = async({clave, perfil, id})=>{
     let connection;
     try {
         connection = await pool.getConnection();
         // Iniciar transacción
         await connection.beginTransaction();
 
-        let [resultDirection] = await connection.query(`update usuario
-                    set correo=ifnull(?, correo),
+        let [resultUser] = await connection.query(`update usuario
+                    set 
                     clave=ifnull(?, clave),
                     perfil=ifnull(?, perfil)
-                    where id_usuario=?;`,
-                    [correo, clave, perfil, id_usuario]);
-
-        connection.commit();
-        return {resultDirection};
-
+                    where id=?;`,
+                    [clave, perfil, id]);
+        await connection.commit();
+        return {resultUser};
     }catch (error) {
         if (connection) await connection.rollback(); // Revierte todo si algo falla
         error.source = 'model';
@@ -168,15 +140,15 @@ export const updateUser = async({correo, clave, perfil, id_usuario })=>{
     } 
 }
 
-export const reactivateUser = async({id_usuario})=>{
+export const reactivateUser = async({id})=>{
     let connection;
     try {
         connection = await pool.getConnection();
          const query = {
             text: `update usuario 
                     set estado_usuario=1
-                    where id_usuario=?;`,
-            values:[id_usuario]
+                    where id=?;`,
+            values:[id]
         }
         let [result] = await connection.query(query.text, query.values)
         console.log("hecho model", result )
@@ -189,39 +161,18 @@ export const reactivateUser = async({id_usuario})=>{
     } 
 }
 
-export const chooseEstablishment = async({id_usuario})=>{
-    let connection;
-    try {
-        connection = await pool.getConnection();
-         const query = {
-            text: `select xe.nombre_establecimiento, xe.id_establecimiento 
-                    from usuario xu, personal xpl, establecimiento xe
-                    where xu.id_usuario=? and xu.id_personal=xpl.id_personal;`,
-            values:[id_usuario]
-        }
-        let [result] = await connection.query(query.text, query.values)
-        console.log("hecho model", result )
-        return result;
-    } catch (error) {
-        error.source = 'model';
-        throw error;
-    } finally{
-        if (connection) connection.release();
-    } 
-}
-
-const login = async({correo}) => {
+const login = async({nombre_usuario}) => {
     let connection;
     try {
         connection = await pool.getConnection();
         const query = {
-            text: `SELECT xu.id_usuario, xu.correo, xu.clave, xu.perfil,
-            xpl.id_personal, xur.id_usuario_rol, xr.nombre_rol, xr.id_rol
+            text: `SELECT xu.id, xu.nombre_usuario, xu.clave, xu.perfil,
+            xpl.id, xur.id, xr.nombre_rol, xr.id
         FROM usuario xu, personal xpl, usuario_rol xur, rol xr 
 
-        WHERE xu.correo = ? and xu.id_personal = xpl.id_personal
-        AND xu.id_usuario=xur.id_usuario and xur.id_rol=xr.id_rol and xu.estado_usuario = 1`,
-            values: [correo]
+        WHERE xu.nombre_usuario = ? and xpl.id=xu.id_personal
+        AND xu.id=xur.id_usuario and xr.id=xur.id_rol and xu.estado_usuario = 1`,
+            values: [nombre_usuario]
         }
         const [result] = await connection.query(query.text, query.values);
         
@@ -235,19 +186,24 @@ const login = async({correo}) => {
     }
 }
 
-const setSession = async({id_usuario_rol, id_establecimiento}) => {
+const setSession = async({id, id_establecimiento, fecha_log}) => {
     let connection;
     try {
         connection = await pool.getConnection();
-        const query = {
-            text: `update usuario_rol
-                    set id_establecimiento=ifnull(?, id_establecimiento)
-                    where id_usuario_rol=? and estado_usuario=1;`,
-            values: [id_establecimiento, id_usuario_rol]
-        }
-        const [result] = await connection.query(query.text, query.values);
+        await connection.beginTransaction();
+        const [resultSession] = await connection.query(
+            `update usuario_rol
+            set id_establecimiento=ifnull(?, id_establecimiento)
+            where id=? and estado_usuario_rol=1;`, 
+        [id_establecimiento, id])
+        /* Se haran registro de los logs de los usuarios para casos de auditoria */
+        const [resultLog] = await connection.query(
+            `insert into registro_log(id_usuario_rol, fecha_log) 
+            values(?, ?);`, 
+        [id, fecha_log])
 
-        return result;
+        await connection.commit();
+        return {resultSession, resultLog};
     }
     catch (error) {
         error.source = 'model';
@@ -257,36 +213,16 @@ const setSession = async({id_usuario_rol, id_establecimiento}) => {
     }
 }
 
-const logLogin = async({id_usuario_rol, fecha_log}) => {
+const showUserByCi = async({ci}) => {
     let connection;
     try {
         connection = await pool.getConnection();
         const query = {
-            text: `insert into registro_log(id_usuario_rol, fecha_log) 
-                values(?, ?);`,
-            values: [id_usuario_rol, fecha_log]
-        }
-        const [result] = await connection.query(query.text, query.values);
-
-        return result;
-    }
-    catch (error) {
-        error.source = 'model';
-        throw error;
-    } finally{
-        if (connection) connection.release();
-    }
-}
-
-const showUserByCorreo = async({correo}) => {
-    let connection;
-    try {
-        connection = await pool.getConnection();
-        const query = {
-            text: `select id_usuario, correo, clave, perfil, id_personal  
-                from usuario 
-                where correo = ?;`,
-            values: [correo]
+            text: `select xpe.id as id_persona, xpl.id as id_personal,
+                concat(xpe.nombre," ", xpe.paterno, " ", xpe.materno) as nombres  
+                from persona xpe, personal xpl
+                where xpe.ci = ? and xpe.id=xpl.id_persona and xpl.estado_personal=1;`,
+            values: [ci]
         }
         const [result] = await connection.query(query.text, query.values);
         return result;
@@ -297,22 +233,17 @@ const showUserByCorreo = async({correo}) => {
     } finally{
         if (connection) connection.release();
     }
-    
 }
-
 
 export const userModel = {
     createUser,
-    verifyIfExistUser,
     showUser,
     updateUser,
     deleteUser,
-    verifyIfExistedUser,
     reactivateUser,
-    showUserById,
+    verifyIfExistUser,
+    verifyIfExistedUser,
     setSession,
     login,
-    logLogin,
-    showUserByCorreo,
-    chooseEstablishment
+    showUserByCi
 }

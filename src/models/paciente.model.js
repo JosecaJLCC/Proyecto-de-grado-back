@@ -2,9 +2,9 @@
 import { pool } from "../database.js";
 
 const createPatient = async({ departamento, municipio, zona, av_calle, nro_puerta,
-                            ci, extension, nombre, paterno, materno, nacionalidad,
+                            ci, nombre, paterno, materno, nacionalidad,
                             estado_civil, nro_telf, sexo, fecha_nacimiento, fecha_creacion,
-                            nombre_carpeta, color, id_microred}) => {
+                            id_carpeta, id_microred}) => {
     let connection;
     try {
         // Obtener conexión
@@ -13,9 +13,9 @@ const createPatient = async({ departamento, municipio, zona, av_calle, nro_puert
         await connection.beginTransaction();
 
         const [person] = await connection.query(
-        `INSERT INTO persona (ci, extension, nombre, paterno, materno, nacionalidad, estado_civil, 
+        `INSERT INTO persona (ci, nombre, paterno, materno, nacionalidad, estado_civil, 
                         nro_telf, sexo, fecha_nacimiento) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
-                        [ci, extension, nombre, paterno, materno, nacionalidad,
+                        [ci, nombre, paterno, materno, nacionalidad,
                         estado_civil, nro_telf, sexo, fecha_nacimiento])
         let id_persona = person.insertId;
 
@@ -28,11 +28,6 @@ const createPatient = async({ departamento, municipio, zona, av_calle, nro_puert
             `INSERT INTO domicilio (id_domicilio, nro_puerta, id_persona) VALUES (?, ?, ?)`, 
             [id_domicilio, nro_puerta, id_persona])
 
-        const [folder] = await connection.query(
-            `INSERT INTO carpeta (nombre_carpeta, color) VALUES (?, ?)`, 
-            [nombre_carpeta, color])
-        
-        let id_carpeta = folder.insertId;
 
         const [patient] = await connection.query(
             `INSERT INTO paciente (id_persona, id_carpeta, id_microred, fecha_creacion) VALUES (?, ?, ?, ?)`, 
@@ -41,7 +36,7 @@ const createPatient = async({ departamento, municipio, zona, av_calle, nro_puert
         // Confirmar si todo salió bien
         await connection.commit();
 
-        return {person, direction, residence, patient, folder};
+        return {person, direction, residence, patient};
 
     } catch (error) {
         if (connection) await connection.rollback(); // Revierte todo si algo falla
@@ -58,8 +53,11 @@ const showPatient = async() =>{
     try {
         connection = await pool.getConnection();
         const query = {
-        text: `select xpa.id_paciente, concat(xpe.ci, " ", xpe.extension) as ci,
+        text: `select xpa.id, xpe.ci,
                 concat(xpe.paterno," ",xpe.materno," ",xpe.nombre) as nombres,
+                xpe.fecha_nacimiento,
+                xpe.sexo, xpe.estado_civil, xpe.nro_telf, xpe.nacionalidad, 
+                DATE_FORMAT(xpa.fecha_creacion, '%Y-%m-%d %H:%i:%s') AS fecha_creacion,
                 xpa.id_microred, xm.nombre_microred
             from persona xpe, paciente xpa, direccion xdi, domicilio xdo, microred xm 
             where xpa.id_persona=xpe.id_persona and xpe.id_persona=xdo.id_persona
@@ -75,15 +73,65 @@ const showPatient = async() =>{
     }  
 }
 
-const createAttention = async({id_usuario, id_paciente, id_establecimiento}) =>{
+const createFolder = async({nombre_carpeta}) =>{
     const query = {
-        text: `insert into atencion(id_usuario, id_paciente, id_establecimiento, fecha_atencion) 
-                values(?,?,?,now())`,
-        values: [id_usuario, id_paciente, id_establecimiento]
+        text: `insert into carpeta(nombre_carpeta) 
+                values(?)`,
+        values: [nombre_carpeta]
     }
 
-    const resultado = await pool.query(query.text, query.values);
-    return resultado[0];
+    const [result] = await pool.query(query.text, query.values);
+    return result;
+}
+
+const showFolder=async()=>{
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        const query = {
+        text: `select *
+            from carpeta`,
+        }
+        const [result] = await connection.query(query.text);
+        return result;
+    } catch (error) {
+        error.source = 'model';
+        throw error;
+    } finally{
+       if (connection) connection.release();
+    }  
+}
+
+const verifyIfExistFolder = async({nombre_carpeta}) =>{
+    let connection;
+    try {
+        connection = await pool.getConnection()
+        const query = {
+            text: `select id_carpeta, color
+                from  carpeta
+                where nombre_carpeta = ?;`,
+            values: [nombre_carpeta]
+        }
+        const [result] = await connection.query(query.text, query.values);
+        return result;
+
+    } catch (error) {
+        error.source = 'model';
+        throw error;
+    } finally {
+        if (connection) connection.release();
+    } 
+}
+
+const createAttention = async({id_usuario, id, id_establecimiento}) =>{
+    const query = {
+        text: `insert into atencion(id_usuario, id, id_establecimiento, fecha_atencion) 
+                values(?,?,?,now())`,
+        values: [id_usuario, id, id_establecimiento]
+    }
+
+    const [result] = await pool.query(query.text, query.values);
+    return result;
 }
 
 const showAttention = async() =>{
@@ -91,7 +139,7 @@ const showAttention = async() =>{
     try {
         connection = await pool.getConnection();
         const query = {
-        text: `select xpa.id_paciente, concat(xpe.ci, " ", xpe.extension) as ci,
+        text: `select xpa.id, xpe.ci,
                 concat(xpe.paterno," ",xpe.materno," ",xpe.nombre) as nombres,
                 xpa.id_microred, xm.nombre_microred
             from persona xpe, paciente xpa, direccion xdi, domicilio xdo, microred xm 
@@ -108,16 +156,16 @@ const showAttention = async() =>{
     }  
 }
 
-const showPatientById = async({id_paciente}) =>{
+const showPatientById = async({id}) =>{
     let connection;
     try {
         connection = await pool.getConnection();
         const query = {
             text: `select *
                 from paciente xpa, persona xpe, domicilio xd
-                where xpa.id_paciente=? and xpa.id_persona = xpe.id_persona and 
+                where xpa.id=? and xpa.id_persona = xpe.id_persona and 
                 xpe.id_persona = xd.id_persona and xpa.estado_paciente=1;`,
-            values: [id_paciente]
+            values: [id]
         }
 
         const [result] = await connection.query(query.text, query.values);
@@ -131,15 +179,15 @@ const showPatientById = async({id_paciente}) =>{
     }  
 }
 
-const verifyIfExistPatient = async({ci, extension}) =>{
+const verifyIfExistPatient = async({ci}) =>{
     let connection;
     try {
         connection = await pool.getConnection()
         const query = {
-            text: `select xpe.id_persona, xpa.id_paciente
+            text: `select xpe.id_persona, xpa.id
                 from persona xpe, paciente xpa
-                where  xpe.ci=? and xpe.extension=? and xpe.id_persona=xpa.id_persona and xpa.estado_paciente = 1;`,
-            values: [ci, extension]
+                where  xpe.ci=? and xpe.id_persona=xpa.id_persona and xpa.estado_paciente = 1;`,
+            values: [ci]
         }
 
         const [result] = await connection.query(query.text, query.values);
@@ -153,15 +201,18 @@ const verifyIfExistPatient = async({ci, extension}) =>{
     } 
 }
 
-const verifyIfExistedPatient = async({ci, extension}) =>{
+const verifyIfExistedPatient = async({ci}) =>{
     let connection;
     try {
         connection = await pool.getConnection()
         const query = {
-            text: `select xpe.id_persona, xpa.id_paciente
-                from persona xpe, paciente xpa
-                where  xpe.ci=? and xpe.extension=? and xpe.id_persona=xpa.id_persona and xpa.estado_paciente = 0;`,
-            values: [ci, extension]
+            text: `
+                select *
+                from paciente xpa, persona xpe, domicilio xdo
+                where xpe.ci=? and 
+                xpa.id_persona=xpe.id_persona and 
+                xpe.id_persona=xdo.id_persona and xpa.estado_paciente=0`,
+            values: [ci]
         }
 
         const [result] = await connection.query(query.text, query.values);
@@ -176,13 +227,13 @@ const verifyIfExistedPatient = async({ci, extension}) =>{
     } 
 }
 
-export const deletePatient = async({id_paciente}) =>{
+export const deletePatient = async({id}) =>{
     let connection;
     try {
         connection = await pool.getConnection();
         const query = {
-            text: 'update paciente set estado_paciente = 0 where id_paciente = ?',
-            values:[id_paciente]
+            text: 'update paciente set estado_paciente = 0 where id = ?',
+            values:[id]
         }
         const [result] = await connection.query(query.text, query.values)  
         return result;
@@ -194,24 +245,23 @@ export const deletePatient = async({id_paciente}) =>{
     }  
 }
 
-export const updatePatient = async({departamento, municipio, zona, av_calle,
-                                    id_direccion, nro_puerta, id_persona, id_domicilio,
-                            ci, extension, nombre, paterno, materno, nacionalidad,
+export const updatePatient = async({id_persona, id_domicilio, id,
+                                departamento, municipio, zona, av_calle, nro_puerta, 
+                            ci, nombre, paterno, materno, nacionalidad,
                             estado_civil, nro_telf, sexo, fecha_nacimiento,
-                            tipo_sangre, peso, estatura, id_paciente})=>{
+                            id_microred, tipo_sangre, peso, estatura, nombre_carpeta})=>{
     let connection;
     try {
         connection = await pool.getConnection();
         // Iniciar transacción
         await connection.beginTransaction();
-
         let [resultDirection] = await connection.query(`update direccion 
                     set departamento=ifnull(?, departamento),
                     municipio=ifnull(?, municipio),
                     zona=ifnull(?, zona),
                     av_calle=ifnull(?, av_calle)
                     where id_direccion=?;`,
-                    [departamento, municipio, zona, av_calle, id_direccion]);
+                    [departamento, municipio, zona, av_calle, id_domicilio]);
 
         let [resultResidence] = await connection.query(`update domicilio 
                     set nro_puerta=ifnull(?, nro_puerta)
@@ -220,7 +270,6 @@ export const updatePatient = async({departamento, municipio, zona, av_calle,
 
         let [resultPerson] = await connection.query(`update persona 
                     set ci=ifnull(?, ci),
-                    extension=ifnull(?, extension),
                     nombre=ifnull(?, nombre),
                     paterno = ifnull(?, paterno),
                     materno = ifnull(?, materno),
@@ -230,17 +279,28 @@ export const updatePatient = async({departamento, municipio, zona, av_calle,
                     sexo = ifnull(?, sexo),
                     fecha_nacimiento = ifnull(?, fecha_nacimiento)
                     where id_persona=?`,
-                    [ci, extension, nombre, paterno, materno, nacionalidad,
-                            estado_civil, nro_telf, sexo, fecha_nacimiento, id_persona ])
-        
+                    [ci, nombre, paterno, materno, nacionalidad,
+                            estado_civil, nro_telf, sexo, fecha_nacimiento, id_persona ])     
+        let id_carpeta=null;
+        if(nombre_carpeta){
+            const verifyFolder = await verifyIfExistFolder({nombre_carpeta});     
+            if(verifyFolder.length<=0){
+                const createFolder=await createFolder({nombre_carpeta});
+                id_carpeta=createFolder.insertId;
+            }
+            else{ id_carpeta=verifyFolder[0].id_carpeta; }
+        }
         let [resultPatient] = await connection.query(`update paciente 
-                    set tipo_sangre=ifnull(?, tipo_sangre),
+                    set 
+                    tipo_sangre=ifnull(?, tipo_sangre),
                     peso=ifnull(?, peso),
-                    estatura=ifnull(?, estatura)
-                    where id_paciente=? and estado_paciente=1;`,
-                    [tipo_sangre, peso, estatura, id_paciente ])
+                    estatura=ifnull(?, estatura),
+                    id_microred=ifnull(?, id_microred),
+                    id_carpeta=ifnull(?, id_carpeta)
+                    where id=? and estado_paciente=1;`,
+                    [tipo_sangre, peso, estatura, id_microred, id_carpeta, id ])
         
-        connection.commit();
+        await connection.commit();
         return {resultPerson, resultDirection, resultResidence, resultPatient};
     }catch (error) {
         if (connection) await connection.rollback(); // Revierte todo si algo falla
@@ -252,19 +312,59 @@ export const updatePatient = async({departamento, municipio, zona, av_calle,
     } 
 }
 
-export const reactivatePatient = async({id_paciente})=>{
+export const reactivatePatient = async({id_persona, id_domicilio, id,
+                                departamento, municipio, zona, av_calle, nro_puerta, 
+                            ci, nombre, paterno, materno, nacionalidad,
+                            estado_civil, nro_telf, sexo, fecha_nacimiento,
+                            id_microred, nombre_carpeta})=>{
     let connection;
     try {
         connection = await pool.getConnection();
-         const query = {
-            text: `update paciente 
-                    set estado_paciente=1
-                    where id_paciente=?;`,
-            values:[id_paciente]
+        await connection.beginTransaction();
+        let [resultDirection] = await connection.query(`update direccion 
+                    set departamento=ifnull(?, departamento),
+                    municipio=ifnull(?, municipio),
+                    zona=ifnull(?, zona),
+                    av_calle=ifnull(?, av_calle)
+                    where id_direccion=?;`,
+                    [departamento, municipio, zona, av_calle, id_domicilio]);
+
+        let [resultResidence] = await connection.query(`update domicilio 
+                    set nro_puerta=ifnull(?, nro_puerta)
+                    where id_domicilio=?;`,
+                    [nro_puerta, id_domicilio]);            
+
+        let [resultPerson] = await connection.query(`update persona 
+                    set ci=ifnull(?, ci),
+                    nombre=ifnull(?, nombre),
+                    paterno = ifnull(?, paterno),
+                    materno = ifnull(?, materno),
+                    nacionalidad = ifnull(?, nacionalidad),
+                    estado_civil = ifnull(?, estado_civil),
+                    nro_telf = ifnull(?, nro_telf),
+                    sexo = ifnull(?, sexo),
+                    fecha_nacimiento = ifnull(?, fecha_nacimiento)
+                    where id_persona=?`,
+                    [ci, nombre, paterno, materno, nacionalidad,
+                            estado_civil, nro_telf, sexo, fecha_nacimiento, id_persona ])     
+        let id_carpeta=null;
+        if(nombre_carpeta){
+            const verifyFolder = await verifyIfExistFolder({nombre_carpeta});     
+            if(verifyFolder.length<=0){
+                const createFolder=await createFolder({nombre_carpeta});
+                id_carpeta=createFolder.insertId;
+            }
+            else{ id_carpeta=verifyFolder[0].id_carpeta; }
         }
-        let [result] = await connection.query(query.text, query.values)
-        console.log("hecho model", result )
-        return result;
+        let [resultPatient] = await connection.query(`update paciente 
+                    set estado_paciente=1,
+                    id_microred=ifnull(?, id_microred),
+                    id_carpeta=ifnull(?, id_carpeta)
+                    where id=?;`,
+                    [ id_microred, id_carpeta, id ])
+        
+        await connection.commit();
+        return {resultPerson, resultDirection, resultResidence, resultPatient};
     } catch (error) {
         error.source = 'model';
         throw error;
@@ -283,5 +383,8 @@ export const patientModel = {
     reactivatePatient,
     showPatientById,
     createAttention,
-    showAttention
+    showAttention,
+    verifyIfExistFolder,
+    showFolder,
+    createFolder
 }
