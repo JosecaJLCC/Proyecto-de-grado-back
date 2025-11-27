@@ -21,7 +21,8 @@ app.use(express.urlencoded({extended:true}));
 app.use(morgan('dev'));
 
 app.use(cors({
-  origin: "http://localhost:5173"
+  /* origin: "http://localhost:5173" */
+   origin:"*"
 }));
 
 /*Para las rutas de la carpeta donde conservo las fotos de perfil  */
@@ -37,6 +38,6 @@ app.use('/api/v1/patient', rutasPaciente);
 app.use('/api/v1/staff', rutasPersonal);
 app.use('/api/v1/user', rutasUsuario);
 /* servidor corriendo */
-app.listen(PORT, () => {
+app.listen(PORT,'0.0.0.0', () => {
    return console.log(`Servidor escuchando en el puerto ${PORT}`)
  })

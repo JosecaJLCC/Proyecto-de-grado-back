@@ -14,30 +14,15 @@ const createPatient = async(req, res)=>{
             !nro_telf || !sexo || !fecha_nacimiento || !id_microred || !nombre_carpeta){
             return res.status(200).json({ok:false, message:'Faltan datos del paciente por llenar'})
         }
-        const verifyIfExistPatient = await patientModel.verifyIfExistPatient({ci});
         /* Verifica si existe el paciente */
+        const verifyIfExistPatient = await patientModel.verifyIfExistPatient({ci});
         if(verifyIfExistPatient.length>0){
-            return res.status(200).json({ok:false, message:'Ya existe un registro con el ci del paciente'})
+            return res.status(200).json({ok:false, message:'Paciente existente'})
         }
-        const verifyIfExistedPatient = await patientModel.verifyIfExistedPatient({ci});
         /* Verifica si existió el paciente */
+        const verifyIfExistedPatient = await patientModel.verifyIfExistedPatient({ci});
         if(verifyIfExistedPatient.length>0){
-            console.log("mi verificacion",verifyIfExistedPatient[0].id)
-            const id_domicilio = verifyIfExistedPatient[0].id_domicilio;
-            const id_persona = verifyIfExistedPatient[0].id_persona;
-
-             await patientModel.reactivatePatient({id:verifyIfExistedPatient[0].id,
-                id_persona, id_domicilio,
-                departamento:domicilio.departamento, 
-                municipio:domicilio.municipio,
-                zona:domicilio.zona, 
-                av_calle:domicilio.av_calle, 
-                nro_puerta:domicilio.nro_puerta,
-                ci, nombre, paterno, materno, nacionalidad,
-                estado_civil, nro_telf, sexo, fecha_nacimiento,
-                id_microred, nombre_carpeta
-             })
-            return res.status(201).json({ok:true, message:"establecimiento reestablecido con exito"});
+            return res.status(201).json({ok:false, message:"Paciente existente pero inactivo"});
         }
         /* Verifica que exista la carpeta del paciente */
         const verifyIfExistFolder = await patientModel.verifyIfExistFolder({nombre_carpeta});
@@ -46,7 +31,10 @@ const createPatient = async(req, res)=>{
             const createFolder=await patientModel.createFolder({nombre_carpeta});
             id_carpeta=createFolder.insertId;
         }
-        id_carpeta=verifyIfExistFolder[0].id_carpeta;
+        else{
+            id_carpeta=verifyIfExistFolder[0].id;
+        }
+        
         const fecha_creacion = fechaHoraBolivia();
         const result = await patientModel.createPatient({ departamento:domicilio.departamento, 
                                                     municipio:domicilio.municipio, zona:domicilio.zona, 
@@ -67,13 +55,14 @@ const createPatient = async(req, res)=>{
 }
 
 const showPatient = async(req, res)=>{
+    const {estado_paciente}=req.params
+    console.log("estado del paciente: ", estado_paciente)
     try {
-        const result = await patientModel.showPatient();
+        const result = await patientModel.showPatient({estado_paciente});
         if(result.length<=0){
-            return res.status(200).json({ ok: true, data: [], message: 'No existen pacientes registrados' });
+            return res.status(200).json({ ok: false, data: [], message: 'No existen pacientes registrados' });
         }
         res.status(200).json({ok:true, data: result});
-
     } catch (error) {
         if (error.source === 'model') {
             console.log('Error del modelo:', error.message);
@@ -107,16 +96,13 @@ const showFolder = async(req, res)=>{
 
 const deletePatient = async(req, res)=>{
     const { id } = req.params;
-    if (!id) {
-        return res.status(400).json({ ok: false, message: 'El id de persona es obligatorio' });
-    }
+    console.log("delete paciente", id)
     try {
         const result = await patientModel.deletePatient({id});
         if(result.affectedRows<=0){
-            return res.status(404).json({ ok: false, message: 'Paciente no encontrado' });
+            return res.status(200).json({ ok: false, message: 'Paciente no encontrado' });
         }
         res.status(200).json({ ok: true, message: 'Paciente eliminado correctamente' });
-
     } catch (error) {
         if (error.source === 'model') {
             console.log('Error del modelo:', error.message);
@@ -127,18 +113,34 @@ const deletePatient = async(req, res)=>{
         }
     }
 }
+
+const reactivatePatient = async(req, res)=>{
+    const { id } = req.params;
+    try {
+        const result = await patientModel.reactivatePatient({id});
+        if(result.affectedRows<=0){
+            return res.status(200).json({ ok: false, message: 'Paciente no encontrado' });
+        }
+        res.status(200).json({ ok: true, message: 'Paciente reactivado correctamente' });
+    } catch (error) {
+        if (error.source === 'model') {
+            console.log('Error del modelo:', error.message);
+            res.status(500).json({ ok: false, message: 'Error en la base de datos: ' + error.message });
+        } else {
+            console.log('Error del controller:', error.message);
+            res.status(500).json({ ok: false, message: 'Error del servidor: ' + error.message });
+        }
+    }
+}
+
 export const updatePatient = async (req, res) => {
     try {
         const { id } = req.params;
         const { domicilio,
-            ci, nombre, paterno, materno, nacionalidad,
-            estado_civil, nro_telf, sexo, fecha_nacimiento, 
-            id_microred, nombre_carpeta,
-            tipo_sangre, peso, estatura} = req.body;       
-        // Validación mínima
-        if (!id) {
-            return res.status(400).json({ ok: false, message: 'El id de establecimiento es obligatorio' });
-        }
+                ci, nombre, paterno, materno, nacionalidad,
+                estado_civil, nro_telf, sexo, fecha_nacimiento, 
+                id_microred, nombre_carpeta,
+                tipo_sangre, peso, estatura} = req.body;       
 
         let resultPatientById = await patientModel.showPatientById({id});
         const id_domicilio = resultPatientById[0].id_domicilio;
@@ -184,5 +186,6 @@ export const patientController = {
     showPatient,
     deletePatient,
     updatePatient,
+    reactivatePatient,
     showFolder
 }

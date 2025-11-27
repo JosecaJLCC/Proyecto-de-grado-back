@@ -5,13 +5,15 @@ import { verificarToken } from '../middlewares/jwt.middleware.js';
 import multer from 'multer'
 
 const upload = multer({dest: './src/uploads'});
-
  
 export const rutas = Router();
 
 rutas.post('/login', userController.login)
 rutas.post('/create', upload.single('imagenPerfil') ,userController.createUser)
-rutas.get('/show', userController.showUser)
+rutas.get('/show/:estado_usuario', userController.showUser)
+rutas.patch('/update/:id',upload.single('imagenPerfil'), userController.updateUser)
+rutas.patch('/delete/:id', userController.deleteUser)
+rutas.patch('/reactivate/:id', userController.reactivateUser)
 rutas.get("/profile", verificarToken, userController.profile)
 rutas.post("/session", userController.setSession)
 rutas.get("/search/:ci", userController.searchUser)

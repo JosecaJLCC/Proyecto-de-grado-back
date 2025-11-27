@@ -61,9 +61,6 @@ const showMicroRed = async(req, res)=>{
 
 const deleteMicroRed = async(req, res)=>{
     const { codigo } = req.params;
-    if (!codigo) {
-        return res.status(200).json({ ok: false, message: 'El codigo es obligatorio' });
-    }
     try {
         /* Hace un update estado=0 si es que la microred existe*/
         const result = await microredModel.deleteMicroRed({codigo});
@@ -84,9 +81,6 @@ const deleteMicroRed = async(req, res)=>{
 
 const reactivateMicroRed = async(req, res)=>{
     const { codigo } = req.params;
-    if (!codigo) {
-        return res.status(200).json({ ok: false, message: 'El codigo es obligatorio' });
-    }
     try {
         /* Hace un update estado=1*/
         const result = await microredModel.reactivateMicroRed({codigo});
@@ -112,10 +106,7 @@ export const updateMicroRed = async (req, res) => {
         console.log("microred param: ", req.params)
         console.log("microred body: ", req.body)
         let id_director="";
-        // Validación mínima
-        if (!codigo) {
-            return res.status(200).json({ ok: false, message: 'El codigo es obligatorio' });
-        }
+
         /* Verifica si existe el director */
         if(ci_director){
             const verifyDirector = await microredModel.directorMicroRed({ci_director})

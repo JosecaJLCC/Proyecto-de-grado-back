@@ -34,8 +34,8 @@ const createUser = async(req, res) =>{
         else{
             nombreArchivo = 'usuario.png';
         } 
-        /* Para la encriptacion de contrasenias con palabras aleatorias */
-        const saltRounds=10;
+        /* Para el hash no reversible de contraseñas*/
+        const saltRounds=Math.floor(Math.random() * (12 - 10 + 1)) + 10;
         const salt = await bcrypt.genSalt(saltRounds);
         const hashedPassword = await bcrypt.hash(clave, salt);
 
@@ -55,7 +55,8 @@ const createUser = async(req, res) =>{
 
 const showUser = async(req, res)=>{
     try {
-        const result = await userModel.showUser();
+        const {estado_usuario}=req.params;
+        const result = await userModel.showUser({estado_usuario});
         if(result.length<=0){
             return res.status(200).json({ ok: false, data: [], message: 'No existe staff registrado' });
         }
@@ -74,9 +75,43 @@ const showUser = async(req, res)=>{
 
 const updateUser = async(req, res)=>{
     try {
-        const {id} = req.param;
-        const {clave, perfil} = req.body;
-        const result = await userModel.updateUser({id, clave, perfil});
+        const {id} = req.params;
+        const {clave} = req.body;
+        console.log("mis datos update: ",req.params, req.body, req.file)
+        let nombreArchivo = ""
+        const saltRounds=10;
+        let salt="";
+        let hashedPassword="";
+        if(req.file){
+            const perfil = req.file;
+            nombreArchivo = savePicture(perfil);
+        }
+        if(clave){
+            
+            salt = await bcrypt.genSalt(saltRounds);
+            hashedPassword = await bcrypt.hash(clave, salt);    
+        }
+        const result = await userModel.updateUser({
+            id, 
+            clave: hashedPassword || null, 
+            perfil: nombreArchivo || null
+        });
+        res.status(200).json({ok:true, message:"Usuario actualizado correctamente", data: result});
+    } catch (error) {
+        if (error.source === 'model') {
+            console.log('Error del modelo:', error.message);
+            res.status(500).json({ ok: false, message: 'Error en la base de datos: ' + error.message });
+        } else {
+            console.log('Error del controller:', error.message);
+            res.status(500).json({ ok: false, message: 'Error del servidor: ' + error.message });
+        }
+    }
+}
+
+const deleteUser = async(req, res)=>{
+    try {
+        const {id}=req.params;
+        const result = await userModel.deleteUser({id});
         if(result.length<=0){
             return res.status(200).json({ ok: false, data: [], message: 'No existe el usuario' });
         }
@@ -92,10 +127,10 @@ const updateUser = async(req, res)=>{
     }
 }
 
-const deleteUser = async(req, res)=>{
+const reactivateUser = async(req, res)=>{
     try {
-        const {id}=req.param;
-        const result = await userModel.deleteUser({id});
+        const {id}=req.params;
+        const result = await userModel.reactivateUser({id});
         if(result.length<=0){
             return res.status(200).json({ ok: false, data: [], message: 'No existe el usuario' });
         }
@@ -153,21 +188,19 @@ const login =  async(req, res)=>{
         if(!nombre_usuario || !clave){
             return res.status(200).json({ok:false, message:"Existen campos sin llenar"})
         }
-        /* Hallamos el nombre_usuario del usuario para la auntenticacion */
-        const result = await userModel.login({nombre_usuario});
-        console.log("result login: ", result)
-        /* Si usuario.length es 0 entonces no existe usuarios con ese nombre_usuario, nota: es un array de objetos asi que pueden ser más */
+        /* Hallamos la informacion implicada al nombre de usuario ingresado */
+        const result = await userModel.login({nombre_usuario});       
+        /* Si usuario.length es 0 entonces no existe usuarios con ese nombre_usuario*/
         if(result.length<=0){
-            return res.status(200).json({ ok:false, message:`¡Nombre de usuario inexistente!` })
+            return res.status(200).json({ ok:false, message:"¡Nombre de usuario inexistente!"});
         }
-        /* Como es un array de objetos, pero como solo puede haber un nombre_usuario, igual debemos apuntar a la posicion cero usuario[0] */
+        /*Comparacion de la clave ingresada con la clave referente al nombre de usuario*/
         const isMatch = await bcrypt.compare(clave, result[0].clave);
-        console.log("ismatch",isMatch)
         /* isMatch devuelve true si hay coincidencia y false si no lo hay */
         if(!isMatch){
-            return res.status(200).json({ ok:false, message:`¡Clave inexistente!` })
+            return res.status(200).json({ ok:false, message:"¡Clave inexistente!"});
         }
-        res.status(200).json({ ok:true, data:result})     
+        res.status(200).json({ ok:true, data:result});
     } catch (error) {
         if (error.source === 'model') {
             console.log('Error del modelo login:', error.message);
@@ -198,8 +231,10 @@ const setSession = async(req, res) => {
             id_establecimiento: id_establecimiento,
             nombre_establecimiento: nombre_establecimiento,
             perfil: perfil
-        }, JWT_TOKEN, {expiresIn: '1h'})
-        
+        }, JWT_TOKEN, {expiresIn: '4h'})
+        console.log("")
+        console.log(token)
+        console.log("")
         res.status(200).json({ok: true, token: token})
     } catch (error) {
         if (error.source === 'model') {
@@ -242,6 +277,7 @@ export const userController = {
     showUser, 
     updateUser,
     deleteUser,
+    reactivateUser,
     login,
     profile,
     setSession,

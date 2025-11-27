@@ -33,18 +33,20 @@ const createUser = async({ nombre_usuario, clave, perfil, fecha_creacion, id_per
     }
 };
 
-const showUser = async() =>{
+const showUser = async({estado_usuario}) =>{
     let connection;
     try {
         connection = await pool.getConnection();
         const query = {
-        text: `select *
-            from usuario xu, persona xpe, personal xpl, direccion xdi, domicilio xdo 
-            where xpl.id=xu.id_personal and xpe.id=xpl.id_persona
-            and xpe.id=xdo.id_persona and xdo.id=xdi.id
-            and xu.estado_usuario=1;`,
+            text: `select xu.id, xu.perfil, xu.nombre_usuario, 
+                DATE_FORMAT(xu.fecha_creacion, '%Y-%m-%d %H:%i:%s') AS fecha_creacion,
+                xpe.ci, concat(xpe.paterno, " ", xpe.materno, " ", xpe.nombre) as nombres
+                from usuario xu, persona xpe, personal xpl
+                where xpl.id=xu.id_personal and xpe.id=xpl.id_persona
+                and xu.estado_usuario=? and xpl.estado_personal=1;`,
+            values:[estado_usuario]
         }
-        const [result] = await connection.query(query.text);
+        const [result] = await connection.query(query.text, query.values);
         return result;
     } catch (error) {
         error.source = 'model';
@@ -102,7 +104,9 @@ export const deleteUser = async({id}) =>{
     try {
         connection = await pool.getConnection();
         const query = {
-            text: 'update usuario set estado_usuario = 0 where id = ?',
+            text: `update usuario 
+                set estado_usuario = 0 
+                where id = ?`,
             values:[id]
         }
         const [result] = await connection.query(query.text, query.values)  
@@ -121,7 +125,6 @@ export const updateUser = async({clave, perfil, id})=>{
         connection = await pool.getConnection();
         // Iniciar transacción
         await connection.beginTransaction();
-
         let [resultUser] = await connection.query(`update usuario
                     set 
                     clave=ifnull(?, clave),
@@ -169,13 +172,11 @@ const login = async({nombre_usuario}) => {
             text: `SELECT xu.id, xu.nombre_usuario, xu.clave, xu.perfil,
             xpl.id, xur.id, xr.nombre_rol, xr.id
         FROM usuario xu, personal xpl, usuario_rol xur, rol xr 
-
         WHERE xu.nombre_usuario = ? and xpl.id=xu.id_personal
         AND xu.id=xur.id_usuario and xr.id=xur.id_rol and xu.estado_usuario = 1`,
             values: [nombre_usuario]
         }
-        const [result] = await connection.query(query.text, query.values);
-        
+        const [result] = await connection.query(query.text, query.values);       
         return result;
     }
     catch (error) {

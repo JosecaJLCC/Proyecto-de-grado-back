@@ -91,9 +91,7 @@ const deleteStaff = async(req, res)=>{
 
 const reactivateStaff = async(req, res)=>{
     const { id } = req.params;
-    if (!id) {
-        return res.status(200).json({ ok: false, message: 'El id del staff es obligatorio' });
-    }
+
     try {
         /* Hace un update estado=1*/
         const result = await staffModel.reactivateStaff({id});
@@ -156,7 +154,7 @@ const updateStaff = async (req, res) => {
             fecha_ingreso: fecha_ingreso || null,
             id_microred: id_microred || null
         });
-        res.status(200).json({ ok: true, message: 'Staff actualizado correctamente', data: result });
+        res.status(200).json({ ok: true, message: 'Personal actualizado correctamente', data: result });
 
     } catch (error) {
         if (error.source === 'model') {
