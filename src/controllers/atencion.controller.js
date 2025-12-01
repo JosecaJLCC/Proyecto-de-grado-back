@@ -1,7 +1,8 @@
 import { attentionModel } from "../models/atencion.model.js";
 import { medicationModel } from "../models/medicamento.model.js";
 import {diagnosisModel} from '../models/diagnostico.model.js'
-import { fechaBolivia, fechaHoraBolivia } from "../utils/fechaBolivia.js";
+import { fechaHoraBolivia } from "../utils/fechaBolivia.js";
+import { obtenerTurnoPorHora} from '../utils/ObtenerTurno.js'
 
 const showAttention = async(req, res)=>{
     try {
@@ -23,6 +24,32 @@ const showAttention = async(req, res)=>{
     }
 }
 
+const showTurn= async(req, res)=>{
+    try {
+        let fecha_bolivia=fechaHoraBolivia();
+        let turno=obtenerTurnoPorHora(fecha_bolivia)
+        let result=""
+        if(turno!=null){
+            if(turno=="MAÑANA"){
+            result = await attentionModel.verifyTurnMorning({turno, fecha_bolivia})
+            }
+            else if(turno=='TARDE'){
+                result = await attentionModel.verifyTurnAfternoon({turno, fecha_bolivia})
+            }  
+        }
+         
+        res.status(200).json({ok:true, data: result});
+    } catch (error) {
+        if (error.source === 'model') {
+            console.log('Error del modelo:', error.message);
+            res.status(500).json({ ok: false, message: 'Error en la base de datos: ' + error.message });
+        } else {
+            console.log('Error del controller:', error.message);
+            res.status(500).json({ ok: false, message: 'Error del servidor: ' + error.message });
+        }
+    }
+}
+
 const createAttention = async(req, res)=>{
     try {
         const {id_usuario_rol_atencion, id_paciente, id_area, estado_atencion, turno}=req.body;
@@ -30,7 +57,7 @@ const createAttention = async(req, res)=>{
         if(!id_usuario_rol_atencion || !id_paciente || !id_area || !estado_atencion || !turno){
             return res.status(200).json({ok:false, message:'Faltan datos por llenar'})
         }   
-        const fecha_atencion = fechaBolivia();   
+        const fecha_atencion = fechaHoraBolivia();   
         let verifyAttention= await attentionModel.verifyAttention({id_paciente, id_area, fecha_atencion})
         console.log("verifyattention", verifyAttention)
         if(verifyAttention.length>0){
@@ -193,5 +220,6 @@ export const attentionController = {
     showDiagnosis,
     createMedicalDescription,
     updateMedicalDescription,
-    showPrescription
+    showPrescription,
+    showTurn
 }

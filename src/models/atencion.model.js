@@ -150,10 +150,54 @@ const verifyAttention = async({id_paciente, id_area, fecha_atencion}) =>{
     }  
 }
 
+const verifyTurnMorning = async({turno, fecha_bolivia}) =>{
+    let connection;
+    try {
+        connection=await pool.getConnection();
+        const query = {
+            text:`UPDATE atencion
+                SET estado_atencion = 'INCOMPLETA'
+                WHERE turno=? and TIME(?) > '12:00:00'
+                AND estado_atencion != 'FINALIZADA';`,
+            values: [turno, fecha_bolivia]
+        }
+        const [result] = await connection.query(query.text, query.values);
+        return result;
+    } catch (error) {
+        error.source = 'model';
+        throw error;
+    } finally{
+       if (connection) connection.release();
+    }  
+}
+
+const verifyTurnAfternoon = async({turno, fecha_bolivia}) =>{
+    let connection;
+    try {
+        connection=await pool.getConnection();
+        const query = {
+            text:`UPDATE atencion
+                SET estado_atencion = 'INCOMPLETA'
+                WHERE turno=? and TIME(?) > '16:00:00'
+                AND estado_atencion != 'FINALIZADA';`,
+            values: [turno, fecha_bolivia]
+        }
+        const [result] = await connection.query(query.text, query.values);
+        return result;
+    } catch (error) {
+        error.source = 'model';
+        throw error;
+    } finally{
+       if (connection) connection.release();
+    }  
+}
+
 export const attentionModel = {
     createAttention,
     showAttention,
     verifyAttention,
     updateAttention,
-    showMedicalDescription
+    showMedicalDescription,
+    verifyTurnMorning,
+    verifyTurnAfternoon
 }
