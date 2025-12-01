@@ -17,5 +17,6 @@ rutas.patch('/reactivate/:id', userController.reactivateUser)
 rutas.get("/profile", verificarToken, userController.profile)
 rutas.post("/session", userController.setSession)
 rutas.get("/search/:ci", userController.searchUser)
+rutas.get("/author/:id", userController.showUserAuthor)
 
 export default rutas;

@@ -56,6 +56,42 @@ const showUser = async({estado_usuario}) =>{
     }  
 }
 
+const showUserAuthor=async({id})=>{
+    let connection;
+    try {
+        connection = await pool.getConnection()
+        const query = {
+            text: `SELECT 
+                    (
+                    SELECT CONCAT(xpe.nombre, ' ', xpe.paterno)
+                    FROM persona xpe
+                    JOIN personal xpl ON xpl.id_persona = xpe.id
+                    JOIN usuario xu ON xu.id_personal = xpl.id
+                    WHERE xu.id = atencion.id_usuario_rol_diagnostico
+                    ) AS usuario_diagnostico,
+
+                    (
+                    SELECT CONCAT(xpe.nombre, ' ', xpe.paterno)
+                    FROM persona xpe
+                    JOIN personal xpl ON xpl.id_persona = xpe.id
+                    JOIN usuario xu ON xu.id_personal = xpl.id
+                    WHERE xu.id = atencion.id_usuario_rol_farmacia
+                    ) AS usuario_farmacia
+
+                    FROM atencion
+                    WHERE atencion.id = ?;`,
+            values: [id]
+        }
+        const [result] = await connection.query(query.text, query.values);
+        return result;
+    } catch (error) {
+        error.source = 'model';
+        throw error;
+    } finally {
+        if (connection) connection.release();
+    } 
+}
+
 const verifyIfExistUser = async({ ci }) =>{
     let connection;
     try {
@@ -170,7 +206,7 @@ const login = async({nombre_usuario}) => {
         connection = await pool.getConnection();
         const query = {
             text: `SELECT xu.id, xu.nombre_usuario, xu.clave, xu.perfil,
-            xpl.id, xur.id, xr.nombre_rol, xr.id
+            xpl.id as id_personal, xur.id as id_usuario_rol, xr.nombre_rol, xr.id as id_rol
         FROM usuario xu, personal xpl, usuario_rol xur, rol xr 
         WHERE xu.nombre_usuario = ? and xpl.id=xu.id_personal
         AND xu.id=xur.id_usuario and xr.id=xur.id_rol and xu.estado_usuario = 1`,
@@ -246,5 +282,6 @@ export const userModel = {
     verifyIfExistedUser,
     setSession,
     login,
-    showUserByCi
+    showUserByCi,
+    showUserAuthor
 }

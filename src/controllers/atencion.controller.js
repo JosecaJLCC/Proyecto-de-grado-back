@@ -89,14 +89,35 @@ const showMedication = async(req, res)=>{
     }
 }
 
+const showPrescription = async(req, res)=>{
+        const {id}=req.params;
+    try {
+        const result = await attentionModel.showMedicalDescription({id});
+        console.log("my res de medicamento",result)
+        if(result.length<=0){
+            return res.status(200).json({ ok: false, data: [], message: 'No existen medicamentos registrados' });
+        }
+        console.log("my res de show2",result)
+        res.status(200).json({ok:true, data: result});
+    } catch (error) {
+        if (error.source === 'model') {
+            console.log('Error del modelo:', error.message);
+            res.status(500).json({ ok: false, message: 'Error en la base de datos: ' + error.message });
+        } else {
+            console.log('Error del controller:', error.message);
+            res.status(500).json({ ok: false, message: 'Error del servidor: ' + error.message });
+        }
+    }
+}
+
 const createMedicalDescription = async (req, res) => {
     try {
         const { id } = req.params;
-        const { receta, diagnostico, estado_atencion } = req.body;  
+        const { receta, diagnostico, estado_atencion, id_usuario_rol_diagnostico } = req.body;  
         console.log("body de update:", req.body, req.params)
         /*Creacion de la receta medica*/
         let fecha_emision=fechaHoraBolivia();
-        let resultMedicalDescription= await medicationModel.createMedicalDescription({fecha_emision});
+        let resultMedicalDescription= await medicationModel.createPrescription({fecha_emision});
         let id_receta=resultMedicalDescription.insertId;
         console.log("id receta: ", id_receta)
         /*Creacion del diagnostico si existe agarra el id, y si no, crea un nuevo diagnostico*/
@@ -127,7 +148,7 @@ const createMedicalDescription = async (req, res) => {
             id_receta: id_receta || null, 
             id_diagnostico: id_diagnostico || null,
             estado_atencion,
-            id_usuario_rol_diagnostico: diagnostico.id_usuario_rol_diagnostico || null
+            id_usuario_rol_diagnostico
         }); 
         res.status(200).json({ ok: true, message: 'Atencion actualizada correctamente'/* , data: result  */});
 
@@ -145,32 +166,13 @@ const createMedicalDescription = async (req, res) => {
 const updateMedicalDescription = async (req, res) => {
     try {
         const { id } = req.params;
-        const { receta } = req.body;  
-        console.log("body de update:", req.body, req.params)
+        const { estado_atencion, resultPrescription, id_usuario_rol_farmacia } = req.body;  
+        console.log("body de updated:", resultPrescription)
         /*Creacion de la receta medica*/
-        let fecha_emision=fechaHoraBolivia();
-        let resultMedicalDescription= await medicationModel.createMedicalDescription({fecha_emision});
-        let id_receta=resultMedicalDescription.id;
-        /*Creacion del diagnostico si existe agarra el id, y si no, crea un nuevo diagnostico*/
-        let id_diagnostico=0;
-        let resultDiagnosis = await diagnosisModel.verifyDiagnosis({nombre_diagnostico});  
-        let verifyDiagnosis="";
-        if(!resultDiagnosis.length){
-            verifyDiagnosis=await diagnosisModel.createDiagnosis(diagnostico);
-            id_diagnostico=verifyDiagnosis.insertId;
-        }
-        else{
-            id_diagnostico=resultDiagnosis.id;
-        }
-        /* Crea la relacion receta_detalle creando a la vez si no existen los medicamentos, y si existen agarra sus id*/
-        if(receta.length){
-            await medicationModel.createMedication(id_receta, medicamento);
-        }
-        const result = await attentionModel.updateAttention({
-            id, 
-            id_receta: id_receta || null, 
-            id_diagnostico: id_diagnostico
-        }); 
+        let updateAttention=await attentionModel.updateAttention({id, id_usuario_rol_farmacia, estado_atencion});
+
+        let resultUpdateMedication= await medicationModel.updateMedication(resultPrescription);
+        
         res.status(200).json({ ok: true, message: 'Atencion actualizada correctamente'/* , data: result  */});
 
     } catch (error) {
@@ -190,5 +192,6 @@ export const attentionController = {
     showMedication,
     showDiagnosis,
     createMedicalDescription,
-    updateMedicalDescription
+    updateMedicalDescription,
+    showPrescription
 }

@@ -11,5 +11,6 @@ rutas.get('/show-diagnosis', attentionController.showDiagnosis);
 rutas.get('/show-medication', attentionController.showMedication);
 rutas.patch('/create-medical-description/:id', attentionController.createMedicalDescription);
 rutas.patch('/update-medical-description/:id', attentionController.updateMedicalDescription);
-/* rutas.get('/showall', attentionController.mostrarHistorialAtencion); */
+rutas.get('/show-prescription/:id', attentionController.showPrescription);
+
 export default rutas;

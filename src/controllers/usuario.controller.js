@@ -73,6 +73,27 @@ const showUser = async(req, res)=>{
     }
 }
 
+const showUserAuthor = async(req, res)=>{
+    try {
+        const {id}=req.params;
+        const result = await userModel.showUserAuthor({id});
+        if(result.length<=0){
+            return res.status(200).json({ ok: false, data: [], message: 'No existe staff registrado' });
+        }
+        res.status(200).json({ok:true, data: result});
+
+    } catch (error) {
+        if (error.source === 'model') {
+            console.log('Error del modelo:', error.message);
+            res.status(500).json({ ok: false, message: 'Error en la base de datos: ' + error.message });
+        } else {
+            console.log('Error del controller:', error.message);
+            res.status(500).json({ ok: false, message: 'Error del servidor: ' + error.message });
+        }
+    }
+}
+
+
 const updateUser = async(req, res)=>{
     try {
         const {id} = req.params;
@@ -253,6 +274,7 @@ const profile = async(req, res) => {
         let user={
             nombre_usuario:req.nombre_usuario,
             nombre_rol:req.nombre_rol,
+            id_rol:req.id_rol,
             perfil: req.perfil,
             id_usuario: req.id_usuario,
             id: req.id,
@@ -281,5 +303,6 @@ export const userController = {
     login,
     profile,
     setSession,
-    searchUser
+    searchUser,
+    showUserAuthor
 }
