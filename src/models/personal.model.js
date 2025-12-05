@@ -80,7 +80,8 @@ const showStaff = async({estado_personal}) =>{
             from personal xpl, persona xpe, domicilio xdo, direccion xdi, area_trabajo xar, profesion xpr
             where xpl.id_persona=xpe.id and xpl.id_area=xar.id and 
             xpl.id_profesion=xpr.id and xpe.id = xdo.id_persona and 
-            xdo.id = xdi.id and xpl.estado_personal=?;`,
+            xdo.id = xdi.id and xpl.estado_personal=?
+            order by nombres asc;`,
             values:[estado_personal]
         }
         const [result] = await connection.query(query.text, query.values);
@@ -160,7 +161,7 @@ const showStaffById = async({ id }) =>{
             values: [id]
         }
         const [result] = await connection.query(query.text, query.values);
-        /* console.log("mi result:",result) */
+        
         return result;
     } catch (error) {
         error.source = 'model';

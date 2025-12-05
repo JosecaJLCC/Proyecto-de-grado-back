@@ -43,7 +43,8 @@ const showUser = async({estado_usuario}) =>{
                 xpe.ci, concat(xpe.paterno, " ", xpe.materno, " ", xpe.nombre) as nombres
                 from usuario xu, persona xpe, personal xpl
                 where xpl.id=xu.id_personal and xpe.id=xpl.id_persona
-                and xu.estado_usuario=? and xpl.estado_personal=1;`,
+                and xu.estado_usuario=? and xpl.estado_personal=1
+                order by nombres asc;`,
             values:[estado_usuario]
         }
         const [result] = await connection.query(query.text, query.values);
@@ -190,7 +191,7 @@ export const reactivateUser = async({id})=>{
             values:[id]
         }
         let [result] = await connection.query(query.text, query.values)
-        console.log("hecho model", result )
+        
         return result;
     } catch (error) {
         error.source = 'model';

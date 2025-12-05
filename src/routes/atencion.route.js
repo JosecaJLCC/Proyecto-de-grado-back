@@ -13,5 +13,7 @@ rutas.patch('/create-medical-description/:id', attentionController.createMedical
 rutas.patch('/update-medical-description/:id', attentionController.updateMedicalDescription);
 rutas.get('/show-prescription/:id', attentionController.showPrescription);
 rutas.get('/show-turn', attentionController.showTurn);
+rutas.get('/show-status', attentionController.showStatus);
+rutas.patch('/show-report', attentionController.showReport);
 
 export default rutas;

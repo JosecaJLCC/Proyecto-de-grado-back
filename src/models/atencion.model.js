@@ -49,6 +49,154 @@ const showAttention = async() =>{
     }  
 }
 
+const showStatus = async() =>{
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        const query = {
+        text: `SELECT 
+                SUM(estado_atencion = 'EN ESPERA') AS espera,
+                SUM(estado_atencion = 'EN ATENCIÓN') AS atencion,
+                SUM(estado_atencion = 'FINALIZADA') AS finalizada,
+                SUM(estado_atencion = 'INCOMPLETA') AS incompleta
+              FROM atencion
+              where date(fecha_atencion)=curdate();`,
+        }
+        const [result] = await connection.query(query.text);
+        return result;
+    } catch (error) {
+        error.source = 'model';
+        throw error;
+    } finally{
+       if (connection) connection.release();
+    }  
+}
+
+/* const showReport = async({fecha_inicial, fecha_final}) =>{
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        const query = {
+        text: `SELECT 
+                  e.nombre_establecimiento,
+
+                  -- Turno
+                  IFNULL(SUM(CASE WHEN xat.turno = 'MAÑANA' THEN 1 ELSE 0 END), 0) AS manana,
+                  IFNULL(SUM(CASE WHEN xat.turno = 'TARDE' THEN 1 ELSE 0 END), 0) AS tarde,
+
+                  -- Estados
+                  IFNULL(SUM(CASE WHEN xat.estado_atencion = 'FINALIZADA' THEN 1 ELSE 0 END), 0) AS finalizadas,
+                  IFNULL(SUM(CASE WHEN xat.estado_atencion = 'INCOMPLETA' THEN 1 ELSE 0 END), 0) AS incompletas,
+
+                  -- Total general del día
+                  IFNULL(COUNT(xat.id), 0) AS total
+
+              FROM establecimiento e
+
+              LEFT JOIN usuario_rol ur 
+                  ON e.id = ur.id_establecimiento
+
+              LEFT JOIN atencion xat 
+                  ON ur.id = xat.id_usuario_rol_atencion
+                  AND xat.fecha_atencion BETWEEN ? AND  ?
+
+              GROUP BY e.id, e.nombre_establecimiento
+              ORDER BY e.nombre_establecimiento;`,
+          values:[fecha_inicial, fecha_final]
+        }
+        const [result] = await connection.query(query.text, query.values);
+        return result;
+    } catch (error) {
+        error.source = 'model';
+        throw error;
+    } finally{
+       if (connection) connection.release();
+    }  
+} */
+const showReport = async({fecha_inicial, fecha_final}) =>{
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        const query = {
+        text: `SELECT 
+                    xat.id, 
+                    
+                    DATE_FORMAT(xat.fecha_atencion, '%Y-%m-%d %H:%i:%s') AS fecha_atencion,
+                    xdi.nombre_diagnostico, 
+                    xpe.ci, 
+                    
+                    DATE_FORMAT(xpe.fecha_nacimiento, '%Y-%m-%d %H:%i:%s') AS fecha_nacimiento, 
+                    xpe.sexo, 
+                    xpe.nro_telf, 
+                    xdir.municipio,
+
+                    -- Cálculo de la edad
+                    TIMESTAMPDIFF(YEAR, xpe.fecha_nacimiento, CURDATE()) AS edad
+
+                FROM atencion xat
+                INNER JOIN diagnostico xdi ON xat.id_diagnostico = xdi.id
+                INNER JOIN paciente xpa ON xat.id_paciente = xpa.id
+                INNER JOIN persona xpe ON xpa.id_persona = xpe.id
+                INNER JOIN domicilio xdom ON xdom.id_persona = xpe.id
+                INNER JOIN direccion xdir ON xdom.id = xdir.id
+
+                WHERE DATE(xat.fecha_atencion) BETWEEN ? AND ?;`,
+          values:[fecha_inicial, fecha_final]
+        }
+        const [result] = await connection.query(query.text, query.values);
+        return result;
+    } catch (error) {
+        error.source = 'model';
+        throw error;
+    } finally{
+       if (connection) connection.release();
+    }  
+}
+
+const showReport2 = async({fecha_inicial}) =>{
+    let connection;
+    console.log("mi fecha es: ", fecha_inicial)
+    try {
+        connection = await pool.getConnection();
+        const query = {
+        text: `SELECT 
+                  e.nombre_establecimiento,
+
+                  -- Turno
+                  IFNULL(SUM(CASE WHEN xat.turno = 'MAÑANA' THEN 1 ELSE 0 END), 0) AS manana,
+                  IFNULL(SUM(CASE WHEN xat.turno = 'TARDE' THEN 1 ELSE 0 END), 0) AS tarde,
+
+                  -- Estados
+                  IFNULL(SUM(CASE WHEN xat.estado_atencion = 'FINALIZADA' THEN 1 ELSE 0 END), 0) AS finalizadas,
+                  IFNULL(SUM(CASE WHEN xat.estado_atencion = 'INCOMPLETA' THEN 1 ELSE 0 END), 0) AS incompletas,
+
+                  -- Total general del día
+                  IFNULL(COUNT(xat.id), 0) AS total
+
+              FROM establecimiento e
+
+              LEFT JOIN usuario_rol ur 
+                  ON e.id = ur.id_establecimiento
+
+              LEFT JOIN atencion xat 
+                  ON ur.id = xat.id_usuario_rol_atencion
+                  AND date(xat.fecha_atencion)=?
+
+              GROUP BY e.id, e.nombre_establecimiento
+              ORDER BY e.nombre_establecimiento;`,
+          values:[fecha_inicial]
+        }
+        const [result] = await connection.query(query.text, query.values);
+        return result;
+    } catch (error) {
+        error.source = 'model';
+        throw error;
+    } finally{
+       if (connection) connection.release();
+    }  
+}
+
+
 export const updateAttention = async({id, id_receta, id_diagnostico, estado_atencion, id_usuario_rol_diagnostico, id_usuario_rol_farmacia})=>{
     let connection;
     try {
@@ -150,47 +298,29 @@ const verifyAttention = async({id_paciente, id_area, fecha_atencion}) =>{
     }  
 }
 
-const verifyTurnMorning = async({turno, fecha_bolivia}) =>{
-    let connection;
-    try {
-        connection=await pool.getConnection();
-        const query = {
-            text:`UPDATE atencion
-                SET estado_atencion = 'INCOMPLETA'
-                WHERE turno=? and TIME(?) > '12:00:00'
-                AND estado_atencion != 'FINALIZADA';`,
-            values: [turno, fecha_bolivia]
-        }
-        const [result] = await connection.query(query.text, query.values);
-        return result;
-    } catch (error) {
-        error.source = 'model';
-        throw error;
-    } finally{
-       if (connection) connection.release();
-    }  
-}
+const verifyTurn = async ({ turno }) => {
+  let connection;
+  try {
+    connection = await pool.getConnection();
 
-const verifyTurnAfternoon = async({turno, fecha_bolivia}) =>{
-    let connection;
-    try {
-        connection=await pool.getConnection();
-        const query = {
-            text:`UPDATE atencion
-                SET estado_atencion = 'INCOMPLETA'
-                WHERE turno=? and TIME(?) > '16:00:00'
-                AND estado_atencion != 'FINALIZADA';`,
-            values: [turno, fecha_bolivia]
-        }
-        const [result] = await connection.query(query.text, query.values);
-        return result;
-    } catch (error) {
-        error.source = 'model';
-        throw error;
-    } finally{
-       if (connection) connection.release();
-    }  
-}
+    const query = {
+      text: `
+        UPDATE atencion
+        SET estado_atencion = 'INCOMPLETA'
+        WHERE turno = ?
+          AND estado_atencion != 'FINALIZADA';
+      `,
+      
+      values: [turno]
+    };
+
+    const [result] = await connection.query(query.text, query.values);
+    return result;
+
+  } finally {
+    if (connection) connection.release();
+  }
+};
 
 export const attentionModel = {
     createAttention,
@@ -198,6 +328,8 @@ export const attentionModel = {
     verifyAttention,
     updateAttention,
     showMedicalDescription,
-    verifyTurnMorning,
-    verifyTurnAfternoon
+    verifyTurn,
+    showStatus,
+    showReport,
+    showReport2
 }

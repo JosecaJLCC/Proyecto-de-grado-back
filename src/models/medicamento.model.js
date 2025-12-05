@@ -6,11 +6,11 @@ const createMedication=async(id_receta, receta)=>{
     let connection;
     let verifyMyMedication=""
     let id_medicamento=0;
-    console.log("mi receta: ",receta)
+    
     try {
         connection=await pool.getConnection();
         for(let item of receta){
-            console.log("item: ", item)
+            
             verifyMyMedication=await verifyMedication(item.nombre_medicamento);
             if(!verifyMyMedication.length){
                 let [resultMedication]=await connection.query(
@@ -97,14 +97,12 @@ const createPrescription=async()=>{
 }
 /* quedamos aca */
 const updateMedication = async(resultPrescription) =>{
-    console.log("**********************************************")
-    console.log("mi resultado de descripcion medica: ", resultPrescription);
+    
     let connection;
     try {
         connection=await pool.getConnection();
         for(let item of resultPrescription){
-            console.log("dispensada: ",item.cantidad_dispensada)
-            console.log("id_receta_detalle: ",item.id_receta_detalle)
+
             let [result]=await connection.query(
                         `update receta_detalle
                         set cantidad_dispensada=?

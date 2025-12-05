@@ -39,7 +39,7 @@ const createEstablishment = async(req, res)=>{
 
 const showEstablishment = async(req, res)=>{
     const {estado_establecimiento}=req.params
-    console.log("estado establecimiento:", estado_establecimiento)
+    
     try {
         const result = await establishmentModel.showEstablishment({estado_establecimiento});
         if(result.length<=0){
@@ -107,7 +107,7 @@ export const updateEstablishment = async (req, res) => {
     try {
         const { id } = req.params;
         const { departamento, municipio, zona, av_calle, nombre_establecimiento, tipo_establecimiento, id_microred } = req.body;
-        console.log("update establishment",req.body, req.params)                         
+                               
         // Validación mínima
         if (!id) {
             return res.status(200).json({ ok: false, message: 'El id de establecimiento es obligatorio' });

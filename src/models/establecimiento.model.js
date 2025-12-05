@@ -5,7 +5,7 @@ const createEstablishment = async({ departamento, municipio, zona, av_calle,
                                 nombre_establecimiento, tipo_establecimiento, 
                                 fecha_creacion, id_microred }) => {
     let connection;
-    console.log("mi fecha de creacion model_: ", fecha_creacion)
+    
     try {
         // Obtener conexión
         connection = await pool.getConnection();

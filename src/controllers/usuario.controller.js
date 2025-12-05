@@ -98,7 +98,7 @@ const updateUser = async(req, res)=>{
     try {
         const {id} = req.params;
         const {clave} = req.body;
-        console.log("mis datos update: ",req.params, req.body, req.file)
+        
         let nombreArchivo = ""
         const saltRounds=10;
         let salt="";
@@ -169,7 +169,7 @@ const reactivateUser = async(req, res)=>{
 
 const searchUser = async(req, res)=>{
     const {ci}=req.params;
-    console.log("ci de usuario: ",req.params)
+    
     try {
         const existStaff = await staffModel.verifyIfExistStaff({ci})
         if(existStaff.length>0){
@@ -181,9 +181,9 @@ const searchUser = async(req, res)=>{
             if(existedUser.length>0){
                 return res.status(200).json({ ok: false, message: 'Usuario existente pero inactivo' });
             }
-            console.log("aaa")
+            
             const [result] = await userModel.showUserByCi({ci})
-            console.log("bbb")
+            
             return res.status(200).json({ok:true, data: result});
         }
         const existedStaff = await staffModel.verifyIfExistedStaff({ci})
@@ -239,7 +239,7 @@ const setSession = async(req, res) => {
         const {id/*->id_usuario_rol */, id_usuario, id_personal, 
             id_rol, nombre_usuario, nombre_rol, 
             id_establecimiento, nombre_establecimiento, perfil}=req.body;
-        console.log("mi setsession:",req.body)
+        
         const result = await userModel.setSession({id, id_establecimiento, fecha_log}) 
         /* Se envia como parametros en el token el nombre_usuario y id_rol */
         const token = jwt.sign({
@@ -253,9 +253,7 @@ const setSession = async(req, res) => {
             nombre_establecimiento: nombre_establecimiento,
             perfil: perfil
         }, JWT_TOKEN, {expiresIn: '4h'})
-        console.log("")
-        console.log(token)
-        console.log("")
+
         res.status(200).json({ok: true, token: token})
     } catch (error) {
         if (error.source === 'model') {
@@ -269,7 +267,7 @@ const setSession = async(req, res) => {
 }
 
 const profile = async(req, res) => {
-    console.log("mi perfil", req.body)
+    
     try {
         let user={
             nombre_usuario:req.nombre_usuario,

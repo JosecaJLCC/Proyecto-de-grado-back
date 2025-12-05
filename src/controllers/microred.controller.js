@@ -41,7 +41,7 @@ const createMicroRed = async(req, res)=>{
 
 const showMicroRed = async(req, res)=>{
     const {estado_microred}=req.params
-    console.log("estado microred:", estado_microred)
+    
     try {
         const result = await microredModel.showMicroRed({estado_microred});
         if(result.length<=0){
@@ -103,8 +103,7 @@ export const updateMicroRed = async (req, res) => {
     try {
         const { codigo } = req.params;
         const { nombre_microred, red, ci_director } = req.body;
-        console.log("microred param: ", req.params)
-        console.log("microred body: ", req.body)
+        
         let id_director="";
 
         /* Verifica si existe el director */

@@ -60,7 +60,8 @@ const showPatient = async({estado_paciente}) =>{
             from persona xpe, paciente xpa, direccion xdi, domicilio xdo, carpeta xc 
             where xpa.id_persona=xpe.id and xpe.id=xdo.id_persona
             and xdo.id=xdi.id  and
-            xpa.id_carpeta=xc.id and xpa.estado_paciente=?;`,
+            xpa.id_carpeta=xc.id and xpa.estado_paciente=?
+            order by nombres asc;`,
             values:[estado_paciente]
         }
         const [result] = await connection.query(query.text, query.values);
@@ -137,7 +138,7 @@ const showPatientById = async({id}) =>{
         }
 
         const [result] = await connection.query(query.text, query.values);
-        console.log("mi result:",result)
+        
         return result;
     } catch (error) {
         error.source = 'model';
@@ -280,7 +281,7 @@ export const updatePatient = async({id_persona, id_domicilio, id,
 }
 
 export const reactivatePatient = async({id})=>{
-    console.log("patient:", id)
+    
     let connection;
     try {
         connection = await pool.getConnection();
@@ -288,7 +289,7 @@ export const reactivatePatient = async({id})=>{
                     set estado_paciente=1
                     where id=?;`,
                     [id]);
-        console.log("result patient: ",resultPatient);
+        
         
         return {resultPatient};
     } catch (error) {

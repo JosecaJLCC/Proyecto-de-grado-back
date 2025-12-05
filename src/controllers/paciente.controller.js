@@ -6,7 +6,7 @@ const createPatient = async(req, res)=>{
                 ci, nombre, paterno, materno, nacionalidad,
                 estado_civil, nro_telf, sexo, fecha_nacimiento,
                 id_microred, nombre_carpeta} = req.body;
-                console.log("req body de paciente: ",req.body) 
+                
         /* Verificar que los campos no esten vacios */
         if(!domicilio.departamento || !domicilio.municipio || !domicilio.zona 
             || !domicilio.av_calle || !domicilio.nro_puerta || 
@@ -56,7 +56,7 @@ const createPatient = async(req, res)=>{
 
 const showPatient = async(req, res)=>{
     const {estado_paciente}=req.params
-    console.log("estado del paciente: ", estado_paciente)
+    
     try {
         const result = await patientModel.showPatient({estado_paciente});
         if(result.length<=0){
@@ -96,7 +96,7 @@ const showFolder = async(req, res)=>{
 
 const deletePatient = async(req, res)=>{
     const { id } = req.params;
-    console.log("delete paciente", id)
+    
     try {
         const result = await patientModel.deletePatient({id});
         if(result.affectedRows<=0){

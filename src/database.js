@@ -10,23 +10,6 @@ export const pool = createPool({
     database: DB_DATABASE
 })
 
-/* export const createConnection = async() =>{
-    try {
-        const connection = await mysql.createConnection({
-            host: 'localhost',
-            user: 'root',
-            database: 'cs_copacabana',
-            password: '123456',
-            port: 3306
-        });
-        console.log('Conexión exitosa a la base de datos.');
-        connection.query('use cs_copacabana');
-        return connection;
-    } catch (error) {
-        console.error('Error al conectar a la base de datos:', error);
-        throw error;
-    }
-} */
 
 
   

@@ -7,7 +7,7 @@ const createStaff = async(req, res)=>{
                 estado_civil, nro_telf, sexo, fecha_nacimiento,
                 id_profesion, nombre_profesion, id_area, nombre_area, cargo, 
                 nro_matricula, fecha_ingreso, id_microred} = req.body;
-                console.log("body de staff: ",req.body)
+                
         /* Verificar que los campos no esten vacios */
         if(!domicilio.departamento || !domicilio.municipio || !domicilio.zona ||
              !domicilio.av_calle || !domicilio.nro_puerta || 
@@ -48,7 +48,7 @@ const createStaff = async(req, res)=>{
 
 const showStaff = async(req, res)=>{
     const {estado_personal}=req.params
-    console.log("estado personal:", estado_personal)
+    
     try {
         const result = await staffModel.showStaff({estado_personal});
         if(result.length<=0){
@@ -118,7 +118,7 @@ const updateStaff = async (req, res) => {
                 estado_civil, nro_telf, sexo, fecha_nacimiento,
                 id_profesion, nombre_profesion, id_area, nombre_area, cargo, 
                 nro_matricula, fecha_ingreso, id_microred} = req.body;  
-        console.log("body de update:", req.body, req.params)     
+        
         // Validación mínima
         if (!id) {
             return res.status(200).json({ ok: false, message: 'El id del personal es obligatorio' });
