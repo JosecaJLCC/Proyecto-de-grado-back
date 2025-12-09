@@ -49,6 +49,8 @@ const showAttention = async() =>{
     }  
 }
 
+
+
 const showStatus = async() =>{
     let connection;
     try {

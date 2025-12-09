@@ -9,6 +9,7 @@ rutas.patch('/update/:id', patientController.updatePatient)
 rutas.patch('/delete/:id'/* ,verificarToken */, patientController.deletePatient)
 rutas.patch('/reactivate/:id'/* ,verificarToken */, patientController.reactivatePatient)
 rutas.get('/showfolder', patientController.showFolder)
+rutas.get('/show-history', patientController.showHistoryPatient)
 
 
 export default rutas;

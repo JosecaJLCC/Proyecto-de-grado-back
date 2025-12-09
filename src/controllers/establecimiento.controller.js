@@ -1,10 +1,11 @@
 import {establishmentModel} from "../models/establecimiento.model.js";
+import { logsModel } from "../models/logs.model.js";
 import {fechaHoraBolivia } from "../utils/fechaBolivia.js";
 const createEstablishment = async(req, res)=>{
     try {
         const { departamento, municipio, zona, av_calle, 
             nombre_establecimiento, tipo_establecimiento, 
-         id_microred } = req.body;
+         id_microred, id_usuario_rol } = req.body;
         /* Verificar que los campos no esten vacios */
         if(!departamento || !municipio || !zona || !av_calle ||
             !nombre_establecimiento || !tipo_establecimiento || !id_microred){
@@ -25,6 +26,14 @@ const createEstablishment = async(req, res)=>{
         const result = await establishmentModel.createEstablishment({ departamento, municipio, zona, av_calle, 
                                                                     nombre_establecimiento, tipo_establecimiento, 
                                                                  fecha_creacion, id_microred })
+        let tabla_id=result.insertId;
+
+        const resultLog=await logsModel.logsUpdate({
+            id_usuario_rol, 
+            tabla: "ESTABLECIMIENTO",
+            tabla_id,
+            accion: "CREAR",
+            fecha_log:fecha_creacion})
         res.status(201).json({ok:true, data:result ,message:"establecimiento agregado con exito"});
     } catch (error) {
         if (error.source === 'model') {
@@ -59,15 +68,22 @@ const showEstablishment = async(req, res)=>{
 
 const deleteEstablishment = async(req, res)=>{
     const { id } = req.params;
-    if (!id) {
-        return res.status(200).json({ ok: false, message: 'El id de establecimiento es obligatorio' });
-    }
+    const {id_usuario_rol}=req.body;
+    console.log("delete body", req.body)
+    let fecha_log=fechaHoraBolivia();
     try {
         /* Hace un update estado=0 si es que el estableicimiento existe*/
         const result = await establishmentModel.deleteEstablishment({id});
         if(result.affectedRows<=0){
             return res.status(200).json({ ok: false, message: 'Establecimiento no encontrado' });
         }
+        const resultLog= await logsModel.logsUpdate({
+            id_usuario_rol,
+            tabla:"ESTABLECIMIENTO",
+            tabla_id: id,
+            accion: "MODIFICAR",
+            fecha_log
+        })
         res.status(200).json({ ok: true, message: 'Establecimiento eliminado correctamente' });
     } catch (error) {
         if (error.source === 'model') {
@@ -82,15 +98,21 @@ const deleteEstablishment = async(req, res)=>{
 
 const reactivateEstablishment = async(req, res)=>{
     const { id } = req.params;
-    if (!id) {
-        return res.status(200).json({ ok: false, message: 'El id de establecimiento es obligatorio' });
-    }
+    const {id_usuario_rol}=req.body;
+    let fecha_log=fechaHoraBolivia();
     try {
         /* Hace un update estado=1*/
         const result = await establishmentModel.reactivateEstablishment({id});
         if(result.affectedRows<=0){
             return res.status(200).json({ ok: false, message: 'Establecimiento no encontrado' });
         }
+        const resultLog= await logsModel.logsUpdate({
+            id_usuario_rol,
+            tabla:"ESTABLECIMIENTO",
+            tabla_id: id,
+            accion: "MODIFICAR",
+            fecha_log
+        })
         res.status(200).json({ ok: true, message: 'Establecimiento reactivado correctamente' });
     } catch (error) {
         if (error.source === 'model') {
@@ -106,12 +128,8 @@ const reactivateEstablishment = async(req, res)=>{
 export const updateEstablishment = async (req, res) => {
     try {
         const { id } = req.params;
-        const { departamento, municipio, zona, av_calle, nombre_establecimiento, tipo_establecimiento, id_microred } = req.body;
-                               
-        // Validación mínima
-        if (!id) {
-            return res.status(200).json({ ok: false, message: 'El id de establecimiento es obligatorio' });
-        }
+        const { departamento, municipio, zona, av_calle, nombre_establecimiento, tipo_establecimiento, id_microred, id_usuario_rol } = req.body;
+        let fecha_log=fechaHoraBolivia();
         const result = await establishmentModel.updateEstablishment({
             id,
             nombre_establecimiento: nombre_establecimiento || null,
@@ -122,6 +140,12 @@ export const updateEstablishment = async (req, res) => {
             zona: zona || null,
             av_calle: av_calle || null
         });
+        const resultLog=await logsModel.logsUpdate({
+            id_usuario_rol, 
+            tabla: "ESTABLECIMIENTO",
+            tabla_id:id,
+            accion: "MODIFICAR",
+            fecha_log})
         res.status(200).json({ ok: true, message: 'Establecimiento actualizado correctamente', data: result });
     } catch (error) {
         if (error.source === 'model') {

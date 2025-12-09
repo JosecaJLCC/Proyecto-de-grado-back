@@ -74,6 +74,34 @@ const showPatient = async({estado_paciente}) =>{
     }  
 }
 
+const showHistoryPatient = async() =>{
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        const query = {
+        text: `select xat.id, xat.id_paciente, xat.id_area, xpe.ci,
+                concat(xpe.paterno," ",xpe.materno," ",xpe.nombre) as nombres,
+                concat(xdi.zona,", ",xdi.av_calle,", ",xdo.nro_puerta) as domicilio,
+                DATE_FORMAT(xpe.fecha_nacimiento, '%Y-%m-%d %H:%i:%s') AS fecha_nacimiento, xpe.sexo,
+                xar.nombre_area, xe.nombre_establecimiento, xat.estado_atencion, xat.turno,
+                DATE_FORMAT(xat.fecha_atencion, '%Y-%m-%d %H:%i:%s') AS fecha_atencion
+            from persona xpe, paciente xpa, atencion xat, usuario_rol xur, 
+                area_trabajo xar, establecimiento xe, domicilio xdo, direccion xdi  
+            where xpe.id=xdo.id_persona and xdo.id=xdi.id and 
+                xpa.id_persona=xpe.id and xpa.id=xat.id_paciente and 
+                xat.id_area=xar.id and xur.id=xat.id_usuario_rol_atencion and 
+                xur.id_establecimiento=xe.id;`,
+        }
+        const [result] = await connection.query(query.text);
+        return result;
+    } catch (error) {
+        error.source = 'model';
+        throw error;
+    } finally{
+       if (connection) connection.release();
+    }  
+}
+
 const createFolder = async({nombre_carpeta}) =>{
     const query = {
         text: `insert into carpeta(nombre_carpeta) 
@@ -313,5 +341,6 @@ export const patientModel = {
     showPatientById,
     verifyIfExistFolder,
     showFolder,
-    createFolder
+    createFolder, 
+    showHistoryPatient
 }

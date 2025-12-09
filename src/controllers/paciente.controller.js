@@ -74,6 +74,23 @@ const showPatient = async(req, res)=>{
     }
 }
 
+const showHistoryPatient = async(req, res)=>{
+    try {
+        const result = await patientModel.showHistoryPatient();
+        if(result.length<=0){
+            return res.status(200).json({ ok: false, data: [], message: 'No existe historial' });
+        }
+        res.status(200).json({ok:true, data: result});
+    } catch (error) {
+        if (error.source === 'model') {
+            console.log('Error del modelo:', error.message);
+            res.status(500).json({ ok: false, message: 'Error en la base de datos: ' + error.message });
+        } else {
+            console.log('Error del controller:', error.message);
+            res.status(500).json({ ok: false, message: 'Error del servidor: ' + error.message });
+        }
+    }
+}
 
 const showFolder = async(req, res)=>{
     try {
@@ -187,5 +204,6 @@ export const patientController = {
     deletePatient,
     updatePatient,
     reactivatePatient,
-    showFolder
+    showFolder,
+    showHistoryPatient
 }

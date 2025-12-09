@@ -45,6 +45,7 @@ const createStaff = async({ departamento, municipio, zona, av_calle, nro_puerta,
         const [staff] = await connection.query(
             `INSERT INTO personal (cargo, nro_matricula, fecha_ingreso, fecha_creacion, id_area, id_profesion, id_persona, id_microred) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, 
             [ cargo, nro_matricula || null, fecha_ingreso || null, fecha_creacion, id_area, id_profesion, id_persona, id_microred || null])    
+            
         // Confirmar si todo salió bien
         await connection.commit();
 

@@ -190,8 +190,7 @@ export const reactivateUser = async({id})=>{
                     where id=?;`,
             values:[id]
         }
-        let [result] = await connection.query(query.text, query.values)
-        
+        let [result] = await connection.query(query.text, query.values) 
         return result;
     } catch (error) {
         error.source = 'model';
@@ -224,7 +223,7 @@ const login = async({nombre_usuario}) => {
     }
 }
 
-const setSession = async({id, id_establecimiento, fecha_log}) => {
+const setSession = async({id, id_establecimiento}) => {
     let connection;
     try {
         connection = await pool.getConnection();
@@ -235,13 +234,8 @@ const setSession = async({id, id_establecimiento, fecha_log}) => {
             where id=? and estado_usuario_rol=1;`, 
         [id_establecimiento, id])
         /* Se haran registro de los logs de los usuarios para casos de auditoria */
-        const [resultLog] = await connection.query(
-            `insert into registro_log(id_usuario_rol, fecha_log) 
-            values(?, ?);`, 
-        [id, fecha_log])
-
         await connection.commit();
-        return {resultSession, resultLog};
+        return {resultSession};
     }
     catch (error) {
         error.source = 'model';

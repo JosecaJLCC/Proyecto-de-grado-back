@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken';
 import { JWT_TOKEN } from "../config.js";
 import { fechaHoraBolivia } from "../utils/fechaBolivia.js";
 import fs from 'node:fs'
+import { logsModel } from "../models/logs.model.js";
 
 /* cambiar de nombre al archivo imagen de perfil */
 const savePicture = (archivo)=>{
@@ -239,8 +240,9 @@ const setSession = async(req, res) => {
         const {id/*->id_usuario_rol */, id_usuario, id_personal, 
             id_rol, nombre_usuario, nombre_rol, 
             id_establecimiento, nombre_establecimiento, perfil}=req.body;
-        
-        const result = await userModel.setSession({id, id_establecimiento, fecha_log}) 
+        console.log("body: ",req.body)
+        const result = await userModel.setSession({id, id_establecimiento}) 
+        const resultLog = await logsModel.logsSession({id_usuario_rol:id, fecha_log, accion:"LOGIN"})
         /* Se envia como parametros en el token el nombre_usuario y id_rol */
         const token = jwt.sign({
             nombre_usuario: nombre_usuario,
