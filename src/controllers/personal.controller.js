@@ -1,4 +1,5 @@
 import {staffModel} from "../models/personal.model.js";
+import { logsModel } from "../models/logs.model.js";
 import { fechaBolivia, fechaHoraBolivia } from "../utils/fechaBolivia.js";
 const createStaff = async(req, res)=>{
     try {
@@ -6,7 +7,8 @@ const createStaff = async(req, res)=>{
                 ci, nombre, paterno, materno, nacionalidad,
                 estado_civil, nro_telf, sexo, fecha_nacimiento,
                 id_profesion, nombre_profesion, id_area, nombre_area, cargo, 
-                nro_matricula, fecha_ingreso, id_microred} = req.body;
+                nro_matricula, fecha_ingreso, id_microred,
+                id_usuario_rol} = req.body;
                 
         /* Verificar que los campos no esten vacios */
         if(!domicilio.departamento || !domicilio.municipio || !domicilio.zona ||
@@ -34,6 +36,15 @@ const createStaff = async(req, res)=>{
                                                     estado_civil, nro_telf, sexo, fecha_nacimiento,
                                                     id_profesion, nombre_profesion, id_area, nombre_area, cargo, 
                                                     nro_matricula, fecha_ingreso, fecha_creacion, id_microred })
+
+                let tabla_id=result.insertId;
+        
+                const resultLog=await logsModel.logsUpdate({
+                    id_usuario_rol, 
+                    tabla: "PERSONAL",
+                    tabla_id,
+                    accion: "CREAR",
+                    fecha_log:fecha_creacion})                                            
         res.status(201).json({ok:true, data:result ,message:"Personal agregado con exito"});
     } catch (error) {
         if (error.source === 'model') {
@@ -47,8 +58,7 @@ const createStaff = async(req, res)=>{
 }
 
 const showStaff = async(req, res)=>{
-    const {estado_personal}=req.params
-    
+    const {estado_personal}=req.params;
     try {
         const result = await staffModel.showStaff({estado_personal});
         if(result.length<=0){
@@ -68,15 +78,21 @@ const showStaff = async(req, res)=>{
 
 const deleteStaff = async(req, res)=>{
     const { id } = req.params;
-    if (!id) {
-        return res.status(200).json({ ok: false, message: 'El id del staff es obligatorio' });
-    }
+    const {id_usuario_rol}=req.body;
+    let fecha_log=fechaHoraBolivia();
     try {
         /* Hace un update estado=0 si es que el personal existe*/
         const result = await staffModel.deleteStaff({id});
         if(result.affectedRows<=0){
             return res.status(200).json({ ok: false, message: 'staff no encontrado' });
         }
+        const resultLog= await logsModel.logsUpdate({
+                    id_usuario_rol,
+                    tabla:"PERSONAL",
+                    tabla_id: id,
+                    accion: "ELIMINAR",
+                    fecha_log
+                })
         res.status(200).json({ ok: true, message: 'staff eliminado correctamente' });
     } catch (error) {
         if (error.source === 'model') {
@@ -91,13 +107,21 @@ const deleteStaff = async(req, res)=>{
 
 const reactivateStaff = async(req, res)=>{
     const { id } = req.params;
-
+    const {id_usuario_rol}=req.body;
+    let fecha_log=fechaHoraBolivia();
     try {
         /* Hace un update estado=1*/
         const result = await staffModel.reactivateStaff({id});
         if(result.affectedRows<=0){
             return res.status(200).json({ ok: false, message: 'Personal no encontrado' });
         }
+         const resultLog= await logsModel.logsUpdate({
+                    id_usuario_rol,
+                    tabla:"PERSONAL",
+                    tabla_id: id,
+                    accion: "REACTIVAR",
+                    fecha_log
+                })
         res.status(200).json({ ok: true, message: 'Personal reactivado correctamente' });
     } catch (error) {
         if (error.source === 'model') {
@@ -117,12 +141,9 @@ const updateStaff = async (req, res) => {
                 ci, nombre, paterno, materno, nacionalidad,
                 estado_civil, nro_telf, sexo, fecha_nacimiento,
                 id_profesion, nombre_profesion, id_area, nombre_area, cargo, 
-                nro_matricula, fecha_ingreso, id_microred} = req.body;  
-        
-        // Validación mínima
-        if (!id) {
-            return res.status(200).json({ ok: false, message: 'El id del personal es obligatorio' });
-        }
+                nro_matricula, fecha_ingreso, id_microred,
+                id_usuario_rol} = req.body;  
+        let fecha_log=fechaHoraBolivia();
         let resultStaffById = await staffModel.showStaffById({id});
         if(!resultStaffById.length){
             return res.status(200).json({ ok: false, message: 'Staff no encontrado' });
@@ -154,6 +175,12 @@ const updateStaff = async (req, res) => {
             fecha_ingreso: fecha_ingreso || null,
             id_microred: id_microred || null
         });
+        const resultLog=await logsModel.logsUpdate({
+                    id_usuario_rol, 
+                    tabla: "PERSONAL",
+                    tabla_id:id,
+                    accion: "MODIFICAR",
+                    fecha_log})
         res.status(200).json({ ok: true, message: 'Personal actualizado correctamente', data: result });
 
     } catch (error) {

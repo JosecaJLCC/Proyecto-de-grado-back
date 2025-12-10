@@ -69,7 +69,6 @@ const showEstablishment = async(req, res)=>{
 const deleteEstablishment = async(req, res)=>{
     const { id } = req.params;
     const {id_usuario_rol}=req.body;
-    console.log("delete body", req.body)
     let fecha_log=fechaHoraBolivia();
     try {
         /* Hace un update estado=0 si es que el estableicimiento existe*/
@@ -81,7 +80,7 @@ const deleteEstablishment = async(req, res)=>{
             id_usuario_rol,
             tabla:"ESTABLECIMIENTO",
             tabla_id: id,
-            accion: "MODIFICAR",
+            accion: "ELIMINAR",
             fecha_log
         })
         res.status(200).json({ ok: true, message: 'Establecimiento eliminado correctamente' });
@@ -110,7 +109,7 @@ const reactivateEstablishment = async(req, res)=>{
             id_usuario_rol,
             tabla:"ESTABLECIMIENTO",
             tabla_id: id,
-            accion: "MODIFICAR",
+            accion: "REACTIVAR",
             fecha_log
         })
         res.status(200).json({ ok: true, message: 'Establecimiento reactivado correctamente' });

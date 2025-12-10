@@ -82,6 +82,24 @@ const showUserAuthor = async(req, res)=>{
             return res.status(200).json({ ok: false, data: [], message: 'No existe staff registrado' });
         }
         res.status(200).json({ok:true, data: result});
+    } catch (error) {
+        if (error.source === 'model') {
+            console.log('Error del modelo:', error.message);
+            res.status(500).json({ ok: false, message: 'Error en la base de datos: ' + error.message });
+        } else {
+            console.log('Error del controller:', error.message);
+            res.status(500).json({ ok: false, message: 'Error del servidor: ' + error.message });
+        }
+    }
+}
+
+const logsShow= async(req, res)=>{
+    try {
+        const result = await logsModel.logsShow();
+        if(result.length<=0){
+            return res.status(200).json({ ok: false, data: [], message: 'No existe logs registrados' });
+        }
+        res.status(200).json({ok:true, data: result});
 
     } catch (error) {
         if (error.source === 'model') {
@@ -170,7 +188,6 @@ const reactivateUser = async(req, res)=>{
 
 const searchUser = async(req, res)=>{
     const {ci}=req.params;
-    
     try {
         const existStaff = await staffModel.verifyIfExistStaff({ci})
         if(existStaff.length>0){
@@ -234,6 +251,32 @@ const login =  async(req, res)=>{
     }
 }
 
+const logout =  async(req, res)=>{
+    try {
+        /* Se verifica que no haya un campo vacio en los siguientes atributos */
+        const {id_usuario_rol} = req.body;
+        console.log("req body logout: ", req.body);
+
+        let fecha_log=fechaHoraBolivia();
+        /* Rrgistro de actividad de cierre de sesion */
+        const result = await logsModel.logsUpdate({
+            id_usuario_rol, 
+            tabla: "USUARIO",
+            tabla_id:id_usuario_rol,
+            fecha_log,
+            accion: "LOGOUT"});       
+        res.status(200).json({ ok:true, data:result});
+    } catch (error) {
+        if (error.source === 'model') {
+            console.log('Error del modelo login:', error.message);
+            res.status(500).json({ ok: false, message: 'Error en la base de datos: ' + error.message });
+        } else {
+            console.log('Error del controller login:', error.message);
+            res.status(500).json({ ok: false, message: 'Error del servidor: ' + error.message });
+        }
+    }
+}
+
 const setSession = async(req, res) => {
     const fecha_log = fechaHoraBolivia();
     try {   
@@ -242,7 +285,13 @@ const setSession = async(req, res) => {
             id_establecimiento, nombre_establecimiento, perfil}=req.body;
         console.log("body: ",req.body)
         const result = await userModel.setSession({id, id_establecimiento}) 
-        const resultLog = await logsModel.logsSession({id_usuario_rol:id, fecha_log, accion:"LOGIN"})
+
+        const resultLog = await logsModel.logsUpdate({
+            id_usuario_rol:id, 
+            tabla: "USUARIO",
+            tabla_id: id,
+            fecha_log, 
+            accion:"LOGIN"})
         /* Se envia como parametros en el token el nombre_usuario y id_rol */
         const token = jwt.sign({
             nombre_usuario: nombre_usuario,
@@ -301,8 +350,10 @@ export const userController = {
     deleteUser,
     reactivateUser,
     login,
+    logout,
     profile,
     setSession,
     searchUser,
-    showUserAuthor
+    showUserAuthor,
+    logsShow
 }
